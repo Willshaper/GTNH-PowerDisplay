@@ -15,9 +15,6 @@ local files = {
   'src/glasses.lua',
   'src/screen.lua',
   'src/generators.lua',
-  -- from the original PowerDisplay
-  'graphics.lua',
-  'events.lua',
 }
 
 local function ask(question)

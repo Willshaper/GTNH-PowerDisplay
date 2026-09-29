@@ -1,4 +1,4 @@
--- The HUD bar on AR glasses (OCGlasses glasses terminals). Same look as upstream.
+-- The HUD bar on AR glasses (OCGlasses glasses terminals), based on the original PowerDisplay bar.
 -- With hudSide = 'right' the shapes are mirrored across the screen: the bar fills
 -- leftwards from the right edge and slants the other way. The text on the bar reads
 -- exactly as on the left side (stored EU, EU/t, max EU, in that order).

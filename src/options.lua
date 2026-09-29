@@ -16,12 +16,12 @@ local DEFAULTS = {
   showArrows = true,
   showMaxEU = true,
   showMaintenance = true,
-  showTimeTo = true,
-  timeToSeconds = 30,
-  timeToUpdate = 5,
+  showTimeToFullOrEmpty = true,
+  timeToFullOrEmptyAverage = 30,
+  timeToFullOrEmptyUpdate = 5,
   showAverages = true,
   showEUt = true,
-  euTSeconds = 5,
+  euTAverage = 5,
   euTFontSize = 3,
 
   wirelessMode = false,
@@ -62,14 +62,6 @@ local DEFAULTS = {
   lscAddress = false,
 
   sleep = 1,
-}
-
--- Settings from older versions: the new name, or false when it no longer does anything.
--- They are accepted so an old config.lua keeps working.
-local RENAMED = {
-  showRate = 'showArrows',
-  rateThreshold = false,
-  barAnimation = false,
 }
 
 local SIDES = {
@@ -137,14 +129,14 @@ local function check(config)
   end
   number(config, 'GUIscale', 1, 10)
 
-  for _, key in ipairs({'showPercent', 'showMaintenance', 'showTimeTo', 'showAverages', 'showCurrentEU', 'showArrows', 'showMaxEU', 'showEUt', 'wirelessMode', 'metric', 'lowPowerBlink',
+  for _, key in ipairs({'showPercent', 'showMaintenance', 'showTimeToFullOrEmpty', 'showAverages', 'showCurrentEU', 'showArrows', 'showMaxEU', 'showEUt', 'wirelessMode', 'metric', 'lowPowerBlink',
       'showPassiveLoss', 'showHistory', 'generatorControl'}) do
     boolean(config, key)
   end
-  number(config, 'euTSeconds', 1)
+  number(config, 'euTAverage', 1)
   number(config, 'euTFontSize', 1)
-  number(config, 'timeToSeconds', 1)
-  number(config, 'timeToUpdate', 1)
+  number(config, 'timeToFullOrEmptyAverage', 1)
+  number(config, 'timeToFullOrEmptyUpdate', 1)
   number(config, 'wirelessMax', 1)
 
   for _, key in ipairs({'height', 'length', 'fontSize'}) do
@@ -210,13 +202,7 @@ function options.load(path)
     config[key] = value
   end
   for key, value in pairs(loaded) do
-    local renamed = RENAMED[key]
-    if renamed ~= nil then
-      -- An older setting: use it for its new name unless that is set too
-      if renamed and loaded[renamed] == nil then
-        config[renamed] = value
-      end
-    elseif DEFAULTS[key] == nil then
+    if DEFAULTS[key] == nil then
       problem(string.format('%s is not a setting (check the spelling)', tostring(key)))
     else
       config[key] = value

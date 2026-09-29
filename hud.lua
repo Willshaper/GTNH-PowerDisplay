@@ -107,10 +107,10 @@ end
 
 -- Reads and draws until C is pressed (returns) or something fails (raises an error)
 local function run(machine)
-  local average = lsc.newAverage(config.euTSeconds)
+  local average = lsc.newAverage(config.euTAverage)
   -- "Full in" / "Empty in" uses its own, longer average and changes only every
-  -- timeToUpdate seconds, so it doesn't jump around
-  local timeAverage = lsc.newAverage(config.timeToSeconds)
+  -- timeToFullOrEmptyUpdate seconds, so it doesn't jump around
+  local timeAverage = lsc.newAverage(config.timeToFullOrEmptyAverage)
   local timeTo, timeToWhat, timeRate
   local nextTimeTo = 0
   while true do
@@ -131,7 +131,7 @@ local function run(machine)
       timeRate = timeAverage.value()
       timeTo, timeToWhat = lsc.timeTo(data, timeRate)
       if timeRate then
-        nextTimeTo = now + config.timeToUpdate
+        nextTimeTo = now + config.timeToFullOrEmptyUpdate
       end
     end
     view.timeTo, view.timeToWhat, view.timeRate = timeTo, timeToWhat, timeRate

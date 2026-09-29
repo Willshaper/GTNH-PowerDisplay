@@ -414,7 +414,7 @@ function screen.update(data, view)
 
   -- Stored and max EU, and the time to full or empty
   local timeText = ''
-  if config.showTimeTo then
+  if config.showTimeToFullOrEmpty then
     if data.percent >= 0.9995 and (view.eut or 0) >= 0 then
       timeText = 'Full'
     elseif data.percent <= 0.0005 and (view.eut or 0) <= 0 then

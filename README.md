@@ -76,7 +76,7 @@ To update, run the `wget` line above again. Your `config.lua` is kept; the curre
 | `showCurrentEU`, `showMaxEU` | `true` | Stored and maximum EU: on the HUD bar, under the screen's bar. |
 | `showEUt` | `true` | Net EU/t in the middle of the bar (HUD and screen). |
 | `showArrows` | `true` | Animated arrows after the EU/t while charging (nothing, `>`, `>>`, `>>>`, repeating) and before it while discharging (`<` to `<<<`), on the HUD and the screen. |
-| `euTSeconds` | `5` | EU/t is averaged over this many seconds (HUD and screen). |
+| `euTAverage` | `5` | The EU/t is the average over this many seconds (HUD and screen). |
 | `showMaintenance` | `true` | Maintenance status: "Has Problems!" on the HUD, and the status and warning on the screen. |
 | `metric` | `true` | Numbers as `4.4G` or as `4.42e9`. |
 | `wirelessMode`, `wirelessMax` | `false`, `1e15` | Show the wireless network's EU instead. It has no maximum, so `wirelessMax` counts as 100%. |
@@ -94,8 +94,9 @@ To update, run the `wget` line above again. Your `config.lua` is kept; the curre
 | `generatorSide` | `'back'` | Side of the computer the redstone signal comes out of. |
 | `generatorOnBelow`, `generatorOffAbove` | `20`, `90` | Start the generators below the first percentage, stop them above the second. |
 | `generatorSignal` | `'stop'` | `'stop'`: a signal means stop. `'run'`: a signal means run. |
-| `showTimeTo` | `true` | "Full in" / "Empty in" on the screen. |
-| `timeToSeconds`, `timeToUpdate` | `30`, `5` | "Full in" / "Empty in" uses the average EU/t over the last `timeToSeconds` seconds, and changes every `timeToUpdate` seconds. |
+| `showTimeToFullOrEmpty` | `true` | "Full in" / "Empty in" on the screen. |
+| `timeToFullOrEmptyAverage` | `30` | "Full in" / "Empty in" is worked out from the average EU/t over this many seconds. |
+| `timeToFullOrEmptyUpdate` | `5` | How often, in seconds, "Full in" / "Empty in" changes. |
 | `showAverages` | `true` | GregTech's In/Out/Net averages (5 s, 5 min, 1 hour) on the screen. |
 | `showHistory` | `true` | Show the history graph on the screen. |
 | `historyMinutes` | `30` | How much time the screen's history graph covers. |

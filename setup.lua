@@ -22,8 +22,6 @@ local scripts = {
   'src/screen.lua',
   'src/generators.lua',
 }
--- Files from the original PowerDisplay that this version replaces
-local obsolete = {'graphics.lua', 'events.lua'}
 
 -- GitHub caches each file on a branch for up to 5 minutes, so right after an update
 -- some downloads could be old and others new. Downloading from the latest commit's id
@@ -108,11 +106,6 @@ end
 for _, entry in ipairs(wanted) do
   filesystem.remove(path(entry[2]))
   filesystem.rename(temp(entry[2]), path(entry[2]))
-end
-for _, file in ipairs(obsolete) do
-  if filesystem.exists(path(file)) then
-    filesystem.remove(path(file))
-  end
 end
 print('Installed.')
 if filesystem.exists(path('config.default.lua')) then

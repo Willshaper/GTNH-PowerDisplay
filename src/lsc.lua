@@ -1,29 +1,29 @@
 -- Reads the Lapotronic Supercapacitor through an adapter (component gt_machine).
 --
--- getSensorInformation() returns one line per value. Newer GregTech sends them as
--- encoded translation keys with the values after two backslashes, e.g.
+-- getSensorInformation() returns one line per value, as a translation key with the
+-- values after two backslashes, e.g.
 --   kekztech.infodata.lapotronic_super_capacitor.avg_eu_in.sec\\996,147\\5
 --   kekztech.infodata.multi.maintenance_status.ok
--- Older versions send translated English text instead. Lines are matched by name,
--- never by position or length, so reordered or added lines don't break anything.
+-- Lines are matched by key, never by position or length, so reordered or added lines
+-- don't break anything.
 local component = require('component')
 
 local lsc = {}
 
 local SEPARATOR = '\\\\' -- two literal backslashes
 
--- Every key this module reads, with the English text older versions used for it
+-- Every key this module reads (the end of the full translation key)
 local KEYS = {
-  stored = {'eu_stored', 'EU Stored'},
-  capacity = {'total_capacity', 'Total Capacity'},
-  passiveLoss = {'passive_loss', 'Passive Loss'},
-  avgIn = {'avg_eu_in.sec', 'Avg EU IN'},
-  avgOut = {'avg_eu_out.sec', 'Avg EU OUT'},
-  avgIn5m = {'avg_eu_in.min5'},
-  avgOut5m = {'avg_eu_out.min5'},
-  avgIn1h = {'avg_eu_in.hour1'},
-  avgOut1h = {'avg_eu_out.hour1'},
-  wirelessEU = {'wireless_eu', 'Total wireless EU'},
+  stored = 'eu_stored',
+  capacity = 'total_capacity',
+  passiveLoss = 'passive_loss',
+  avgIn = 'avg_eu_in.sec',
+  avgOut = 'avg_eu_out.sec',
+  avgIn5m = 'avg_eu_in.min5',
+  avgOut5m = 'avg_eu_out.min5',
+  avgIn1h = 'avg_eu_in.hour1',
+  avgOut1h = 'avg_eu_out.hour1',
+  wirelessEU = 'wireless_eu',
 }
 
 -- Splits "key\\a\\b" into "key", {"a", "b"}
@@ -49,16 +49,16 @@ local function wholeNumber(text)
     return nil
   end
   text = text:gsub('\194\167.', '') -- Minecraft formatting codes (§c, §r, ...)
-  if text:find('x10', 1, true) or text:find('%d[eE][%+%-]?%d') then
+  if text:find('x10', 1, true) then
     return nil
   end
-  -- The first number only: older versions add text such as "(last 5 seconds)" after it
-  local sign, number = text:match("(%-?)(%d[%d,%.' ]*)")
-  if not number then
+  -- The thousands separator depends on the server's language, so keep only the digits
+  local digits = text:gsub('%D', '')
+  if digits == '' then
     return nil
   end
-  local value = tonumber((number:gsub('%D', '')))
-  return sign == '-' and -value or value
+  local value = tonumber(digits)
+  return text:find('^%s*%-') and -value or value
 end
 
 -- Parses sensor lines into a table with the fields named in KEYS, plus
@@ -69,19 +69,11 @@ function lsc.parse(lines)
     local key, args = split(line)
     if key:find('maintenance_status', 1, true) then
       info.maintenanceOk = not key:find('maintenance_status.bad', 1, true)
-    elseif key:find('Maintenance', 1, true) or key:find('Problems', 1, true) then
-      -- Older GregTech: "Maintenance Status: Working perfectly" / "Has Problems"
-      info.maintenanceOk = key:find('Problem', 1, true) == nil
     end
-    for field, names in pairs(KEYS) do
-      if info[field] == nil then
-        for _, name in ipairs(names) do
-          if key:find(name, 1, true) then
-            -- New format: the value is the first argument. Old format: after the key.
-            info[field] = wholeNumber(args[1] or key:sub(key:find(name, 1, true) + #name))
-            break
-          end
-        end
+    for field, name in pairs(KEYS) do
+      -- Some values come twice (plain, then in standard form); the plain one is first
+      if info[field] == nil and key:find(name, 1, true) then
+        info[field] = wholeNumber(args[1])
       end
     end
   end
