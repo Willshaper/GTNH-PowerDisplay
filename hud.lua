@@ -17,6 +17,7 @@ local screen = require('src.screen')
 local generators = require('src.generators')
 
 local RETRY_SECONDS = 5
+local FRAME_SECONDS = 0.1 -- animation frames between updates
 
 -- config.lua is found the same way require would find it, and read fresh every start
 local configPath = package.searchpath('config', package.path)
@@ -35,14 +36,22 @@ local function stopRequested(char)
   return char == 99 or char == 67 -- c or C
 end
 
--- Waits up to `seconds`, returning true as soon as C is pressed.
+-- Waits up to `seconds`, returning true as soon as C is pressed. With `frame`,
+-- calls frame(uptime) every FRAME_SECONDS meanwhile (bar animation and blinking).
 -- Ctrl+Alt+C raises "interrupted" from event.pull, which ends the program.
-local function wait(seconds)
+local function wait(seconds, frame)
   local deadline = computer.uptime() + seconds
   repeat
-    local name, _, char = event.pull(math.max(0, deadline - computer.uptime()), 'key_down')
+    local timeout = math.max(0, deadline - computer.uptime())
+    if frame then
+      timeout = math.min(timeout, FRAME_SECONDS)
+    end
+    local name, _, char = event.pull(timeout, 'key_down')
     if name == 'key_down' and stopRequested(char) then
       return true
+    end
+    if frame then
+      frame(computer.uptime())
     end
   until computer.uptime() >= deadline
   return false
@@ -60,37 +69,51 @@ local function arrows(percent, last, threshold)
 end
 
 -- Shows a message on the screen, or prints it once if there is no screen
-local printed = {}
+local lastPrinted
 local function message(title, lines, color)
   if screen.active() then
     screen.message(title, lines, color)
     return
   end
   local text = title .. '\n' .. table.concat(lines or {}, '\n')
-  if printed.last ~= text then
+  if lastPrinted ~= text then
     print(text)
-    printed.last = text
+    lastPrinted = text
   end
 end
+
+local hudNote -- shown in the screen's footer, e.g. when no glasses terminal is connected
+local generatorProblem -- why generator control can't run, shown on the screen
 
 -- Finds the LSC, waiting until it can be read. Returns the proxy, or nil if C was pressed.
 local function waitForLSC()
   while true do
-    local machine = lsc.find(config.lscAddress)
+    local machine, seen = lsc.find(config.lscAddress)
     if machine and pcall(machine.getSensorInformation) then
       return machine
     end
     generators.update(nil) -- unknown charge: let the generators run
     hud.notice('Waiting for the LSC...')
-    message('Waiting for the LSC...', {
-      'Place an adapter touching the Lapotronic Supercapacitor controller,',
-      'and connect it to this computer with cable.',
-      config.lscAddress and ('Looking for the address set in config.lua: ' .. config.lscAddress) or '',
-    })
+    local hint
+    if config.lscAddress then
+      hint = 'Looking for the address set in config.lua (lscAddress): ' .. config.lscAddress
+    elseif machine then
+      hint = 'The LSC was found but could not be read yet (is its chunk loaded?).'
+    elseif seen and seen > 1 then
+      hint = seen .. ' GregTech machines are connected and none looks like an LSC. Set lscAddress in config.lua.'
+    else
+      hint = 'Place an adapter touching the Lapotronic Supercapacitor controller, and connect it to this computer with cable.'
+    end
+    message('Waiting for the LSC...', {hint})
     if wait(RETRY_SECONDS) then
       return nil
     end
   end
+end
+
+local function animate(now)
+  hud.animate(now)
+  screen.animate(now)
 end
 
 -- Reads and draws until C is pressed (returns) or something fails (raises an error)
@@ -102,8 +125,14 @@ local function run(machine)
     local now = computer.uptime()
     average.add(now, data.stored)
 
-    local view = {}
+    local view = {hudNote = hudNote, generatorProblem = generatorProblem}
     view.eut = average.value()
+    view.direction = 0
+    if view.eut and view.eut >= 1 then
+      view.direction = 1
+    elseif view.eut and view.eut <= -1 then
+      view.direction = -1
+    end
     view.timeTo, view.timeToWhat = lsc.timeTo(data, view.eut)
     view.lowPower = config.lowPowerAlert ~= false and data.percent * 100 < config.lowPowerAlert
     view.rate = ''
@@ -117,30 +146,30 @@ local function run(machine)
 
     if config.showHud then
       hud.update(data, view)
+      hud.animate(now)
     end
     screen.addSample(now, data.percent)
     screen.update(data, view)
 
-    if wait(config.sleep) then
+    if wait(config.sleep, animate) then
       return
     end
   end
 end
 
 local function main()
-  -- Printed notes go first: once the monitor is drawn, printing would land on top of it
   if config.showHud and hud.start(config) == 0 then
-    print('No glasses terminal found; the HUD is not shown.')
+    hudNote = 'No glasses terminal found'
   end
   if config.showScreen and not screen.start(config) then
     print('No screen or graphics card found; showing the HUD only.')
   end
-  local generatorProblem = generators.start(config)
-  if generatorProblem then
-    message('Generator control is off', {generatorProblem}, 0xFF5555)
-    if wait(RETRY_SECONDS) then
-      return
-    end
+  if hudNote and not screen.active() then
+    print(hudNote .. '; the HUD is not shown.')
+  end
+  generatorProblem = generators.start(config)
+  if generatorProblem and not screen.active() then
+    print('Generator control is off: ' .. generatorProblem)
   end
 
   -- Anything other than C / Ctrl+Alt+C is shown and retried, so one bad read

@@ -11,6 +11,7 @@ This is a fork of [DylanTaylor1/GTNH-PowerDisplay](https://github.com/DylanTaylo
 - **Screen monitor:** stored and max EU, a smooth charge bar, net EU/t, GregTech's own in/out averages (5 s, 5 min, 1 h), time until full or empty, passive loss, generator state and a history graph.
 - **EU/t on the HUD:** net EU/t in the middle of the bar, averaged over the number of seconds you choose.
 - **Low power alert:** below a percentage you set, the bar turns red and blinks, and "Low power!" shows above it.
+- **Bar animation:** a light glint runs along the bar, left to right while charging and right to left while discharging.
 - **Generator control (optional):** a redstone signal that starts your generators below one percentage and stops them above another.
 - **Starts by itself:** auto-start on boot, and wake on redstone so a redstone clock turns the computer back on after a power loss.
 - **Keeps running:** waits for the LSC at boot, and recovers by itself if a read fails (for example while the chunk reloads).
@@ -81,11 +82,13 @@ To update, run the `wget` line above again. Your `config.lua` is kept; the curre
 | `primaryColor`, `secondaryColor`, `textColor`, `euTColor`, `issueColor`, `borderColor` | | HUD colours. `euTColor = false` uses `textColor`. |
 | `lowPowerAlert` | `20` | Percentage below which the low power alert shows. `false` turns it off. |
 | `lowPowerBlink` | `true` | Blink the bar while power is low. |
+| `barAnimation` | `true` | A light glint runs along the bar: left to right while charging, right to left while discharging. |
 | `generatorControl` | `false` | Turn on generator control (see below). |
 | `generatorSide` | `'back'` | Side of the computer the redstone signal comes out of. |
 | `generatorOnBelow`, `generatorOffAbove` | `20`, `90` | Start the generators below the first percentage, stop them above the second. |
 | `generatorSignal` | `'stop'` | `'stop'`: a signal means stop. `'run'`: a signal means run. |
 | `historyMinutes` | `30` | How much time the screen's history graph covers. |
+| `showPassiveLoss` | `true` | Show the LSC's passive loss on the screen. The Net column includes it either way. |
 | `lscAddress` | `false` | Only needed if the computer sees more than one GregTech machine: the start of the LSC's `gt_machine` address. |
 | `sleep` | `1` | Seconds between updates. |
 

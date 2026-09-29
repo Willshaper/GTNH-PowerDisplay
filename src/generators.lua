@@ -34,7 +34,7 @@ function generators.start(cfg)
     return nil
   end
   if not component.isAvailable('redstone') then
-    return 'generatorControl is on, but there is no redstone card or Redstone I/O block'
+    return 'no redstone card in this computer'
   end
   redstone = component.redstone
   side = sides[config.generatorSide]

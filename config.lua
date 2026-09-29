@@ -83,7 +83,11 @@ return {
   lowPowerAlert = 20,
   lowPowerBlink = true,
 
-  -- Generator control (needs a redstone card or a Redstone I/O block)
+  -- A light glint runs along the bar while charging (left to right) or discharging
+  -- (right to left), on the HUD and the screen
+  barAnimation = true,
+
+  -- Generator control (needs a redstone card in the computer)
   generatorControl = false,
   generatorSide = 'back',   -- back, front, left, right, top or bottom
   generatorOnBelow = 20,    -- start the generators below this percentage
@@ -94,6 +98,8 @@ return {
 
   -- Screen: how many minutes the history graph covers
   historyMinutes = 30,
+  -- Screen: show the LSC's passive loss under the averages (Net always includes it)
+  showPassiveLoss = true,
 
   -- Which LSC to read if the computer sees more than one GregTech machine.
   -- false finds it automatically; otherwise the start of its gt_machine address, e.g. 'e190015a'

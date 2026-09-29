@@ -1,6 +1,7 @@
 -- Full-screen power monitor on the computer's own screen.
 -- Rows are redrawn only when they change, so the screen doesn't flicker.
 local component = require('component')
+local computer = require('computer')
 local unicode = require('unicode')
 local format = require('src.format')
 
@@ -16,6 +17,7 @@ local COLOR = {
   bad = 0xFF5555,
   warn = 0xFFFF55,
   bar = 0x55AAFF,
+  barGlint = 0xDDEEFF,
   barEmpty = 0x333333,
   graph = 0x55FFFF,
   background = 0x000000,
@@ -28,7 +30,8 @@ local drawn = {} -- y -> signature of what is on that row
 local touched = {} -- rows written during the current frame
 local fg, bg -- current GPU colours, to skip needless calls
 local config
-local blinkOn = false
+local barRow -- screen row of the bar's first line (nil when not drawn)
+local lastData, lastView -- what the bar shows, for animation frames between updates
 
 -- History graph: one sample per bucket, averaged
 local history = {} -- list of fractions 0..1, oldest first
@@ -211,16 +214,84 @@ end
 -- Left-to-right fill with eighth blocks
 local EIGHTHS = {'▏', '▎', '▍', '▌', '▋', '▊', '▉'}
 
-local function barText(fraction, size)
-  local cells = fraction * size
+
+-- Blinks twice a second, whatever the update interval
+local function blinkPhase(now)
+  return math.floor(now * 2) % 2 == 0
+end
+
+local GLINT_WIDTH = 3 -- cells
+local GLINT_SPEED = 12 -- cells per second
+
+-- The bar, two rows tall. While charging a light glint runs left to right across the
+-- filled part, while discharging right to left.
+local function drawBar(now)
+  local size = width - 2
+  local barColor = COLOR.bar
+  if lastView.lowPower and (not config.lowPowerBlink or blinkPhase(now)) then
+    barColor = COLOR.bad
+  end
+  local cells = lastData.percent * size
   local full = math.floor(cells)
   local part = math.floor((cells - full) * 8)
-  local text = string.rep('█', full)
+  local ending = ''
+  local used = full
   if full < size and part > 0 then
-    text = text .. EIGHTHS[part]
-    full = full + 1
+    ending = EIGHTHS[part]
+    used = used + 1
   end
-  return text .. string.rep(' ', size - full)
+  ending = ending .. string.rep(' ', size - used)
+
+  -- Glint cells [g, g + GLINT_WIDTH) within the full cells [0, full)
+  local g
+  local direction = lastView.direction or 0
+  if config.barAnimation and direction ~= 0 and full >= GLINT_WIDTH + 1 then
+    local cycle = full + GLINT_WIDTH - 1
+    local step = math.floor(now * GLINT_SPEED) % cycle
+    if direction > 0 then
+      g = step - GLINT_WIDTH + 1
+    else
+      g = full - 1 - step
+    end
+  end
+
+  local segments = {{' ', COLOR.text}}
+  if g then
+    local from, to = math.max(0, g), math.min(full, g + GLINT_WIDTH)
+    table.insert(segments, {string.rep('█', from), barColor, COLOR.barEmpty})
+    table.insert(segments, {string.rep('█', to - from), COLOR.barGlint, COLOR.barEmpty})
+    table.insert(segments, {string.rep('█', full - to) .. ending, barColor, COLOR.barEmpty})
+  else
+    table.insert(segments, {string.rep('█', full) .. ending, barColor, COLOR.barEmpty})
+  end
+  -- Both lines are the same, so each segment is drawn on both before changing colour
+  touched[barRow], touched[barRow + 1] = true, true
+  local signature = {}
+  for _, s in ipairs(segments) do
+    table.insert(signature, s[1] .. '\0' .. s[2])
+  end
+  local key = table.concat(signature, '\1') .. '\1' .. barColor
+  if drawn[barRow] == key then
+    return
+  end
+  drawn[barRow], drawn[barRow + 1] = key, key
+  local x = 1
+  for _, s in ipairs(segments) do
+    if s[1] ~= '' then
+      setColors(s[2], s[3] or COLOR.background)
+      gpu.set(x, barRow, s[1])
+      gpu.set(x, barRow + 1, s[1])
+      x = x + len(s[1])
+    end
+  end
+end
+
+-- Called several times a second between updates: moves the glint and blinks the bar.
+-- Only the bar rows are redrawn, and only when they changed.
+function screen.animate(now)
+  if gpu and barRow and lastData then
+    drawBar(now)
+  end
 end
 
 -- Braille bit for dot row k (0 = bottom) in the left or right column of a cell
@@ -273,13 +344,16 @@ local function drawGraph(top, bottom)
   end
 end
 
--- data: from lsc.read; view: {eut, lowPower, generators (true/false/nil)}
+-- data: from lsc.read
+-- view: {eut, direction (1, -1 or 0), timeTo, timeToWhat, lowPower, generators (true/false/nil),
+--        generatorProblem, hudNote}
 function screen.update(data, view)
   if not gpu then
     return
   end
   beginFrame()
-  blinkOn = not blinkOn
+  lastData, lastView = data, view
+  local now = computer.uptime()
   local metric = config.metric
   local y = 1
 
@@ -303,14 +377,8 @@ function screen.update(data, view)
   }, {{string.format('%.2f %% ', data.percent * 100), view.lowPower and COLOR.bad or COLOR.text}})
   y = y + 1
 
-  -- Bar, two rows tall
-  local barColor = COLOR.bar
-  if view.lowPower and (blinkOn or not config.lowPowerBlink) then
-    barColor = COLOR.bad
-  end
-  local bar = barText(data.percent, width - 2)
-  row(y, {{' ', COLOR.text}, {bar, barColor, COLOR.barEmpty}})
-  row(y + 1, {{' ', COLOR.text}, {bar, barColor, COLOR.barEmpty}})
+  barRow = y
+  drawBar(now)
   y = y + 3
 
   -- Net EU/t over the configured window, and time to full or empty
@@ -321,7 +389,11 @@ function screen.update(data, view)
     rateColor = COLOR.bad
   end
   local timeText
-  if view.timeTo then
+  if data.percent >= 0.9995 and (view.eut or 0) >= 0 then
+    timeText = 'Full'
+  elseif data.percent <= 0.0005 and (view.eut or 0) <= 0 then
+    timeText = 'Empty'
+  elseif view.timeTo then
     timeText = (view.timeToWhat == 'full' and 'Full in ' or 'Empty in ') .. format.duration(view.timeTo)
   elseif view.eut then
     timeText = 'Steady'
@@ -360,23 +432,34 @@ function screen.update(data, view)
         {pad(format.rate(net, metric, 2), c2, true), netColor},
       })
     end
-    row(y + 4, {{pad(' Passive loss', c1), COLOR.dim}, {pad(format.eu(data.passiveLoss, metric, 2), c2, true), COLOR.text}, {'  EU/t', COLOR.faint}})
-    y = y + 6
+    y = y + 5
+    if config.showPassiveLoss then
+      -- An extra outflow on top of Out, so it sits in that column
+      row(y - 1, {
+        {pad(' Passive', c1), COLOR.dim},
+        {pad('', c2), COLOR.text},
+        {pad(format.eu(data.passiveLoss, metric, 2), c2, true), COLOR.text},
+        {'  EU/t, included in Net', COLOR.faint},
+      })
+      y = y + 1
+    end
   end
 
   -- Generators
-  if view.generators ~= nil or config.generatorControl then
-    local state, color = 'waiting', COLOR.dim
-    if view.generators == true then
-      state, color = 'RUNNING', COLOR.good
-    elseif view.generators == false then
-      state, color = 'stopped', COLOR.dim
+  if config.generatorControl then
+    if view.generatorProblem then
+      row(y, {{' Generators  ', COLOR.dim}, {'OFF  ' .. view.generatorProblem, COLOR.bad}})
+    else
+      local state, color = 'RUNNING', COLOR.good
+      if view.generators == false then
+        state, color = 'stopped', COLOR.dim
+      end
+      row(y, {
+        {' Generators  ', COLOR.dim}, {state, color},
+        {string.format('   start below %s%%, stop above %s%%, signal on %s side',
+          config.generatorOnBelow, config.generatorOffAbove, config.generatorSide), COLOR.faint},
+      })
     end
-    row(y, {
-      {' Generators  ', COLOR.dim}, {state, color},
-      {string.format('   start below %s%%, stop above %s%%, signal on %s side',
-        config.generatorOnBelow, config.generatorOffAbove, config.generatorSide), COLOR.faint},
-    })
     y = y + 2
   end
 
@@ -397,7 +480,8 @@ function screen.update(data, view)
   if #alerts > 0 then
     row(footer, alerts)
   else
-    row(footer, {{string.format(' Updates every %ss.  Press C to stop.', config.sleep), COLOR.faint}})
+    local note = view.hudNote and ('  ' .. view.hudNote .. '.') or ''
+    row(footer, {{string.format(' Updates every %ss.%s  Press C to stop.', config.sleep, note), COLOR.faint}})
   end
   endFrame()
 end

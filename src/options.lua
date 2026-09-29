@@ -40,6 +40,8 @@ local DEFAULTS = {
 
   lowPowerAlert = 20,
   lowPowerBlink = true,
+  barAnimation = true,
+  showPassiveLoss = true,
 
   generatorControl = false,
   generatorSide = 'back',
@@ -115,7 +117,8 @@ local function check(config)
   boolean(config, 'fullscreen')
   number(config, 'GUIscale', 1, 10)
 
-  for _, key in ipairs({'showCurrentEU', 'showRate', 'showMaxEU', 'showEUt', 'wirelessMode', 'metric', 'lowPowerBlink', 'generatorControl'}) do
+  for _, key in ipairs({'showCurrentEU', 'showRate', 'showMaxEU', 'showEUt', 'wirelessMode', 'metric', 'lowPowerBlink',
+      'barAnimation', 'showPassiveLoss', 'generatorControl'}) do
     boolean(config, key)
   end
   number(config, 'euTSeconds', 1)

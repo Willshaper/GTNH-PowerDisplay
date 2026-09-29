@@ -7,7 +7,11 @@ local hud = {}
 local terminals = {} -- one entry per glasses terminal: {proxy, widgets, last}
 local config
 local l, h, b1, b2, y -- bar geometry, as upstream
-local blinkOn = false
+local lastData, lastView -- for animation frames between updates
+
+local GLINT_WIDTH = 10 -- pixels along the bar
+local GLINT_SPEED = 40 -- pixels per second
+local GLINT_ALPHA = 0.45
 
 -- Minecraft font widths in pixels (glyph + 1 spacing); everything else is 6
 local CHAR_WIDTH = {
@@ -70,6 +74,10 @@ local function draw(glasses)
 
   -- Energy bar and values
   w.energyBar = quad(glasses, {b2+3.25*h, y-b1}, {b2+3.25*h, y-b1}, {b2+2.25*h, y-b1-h}, {b2+2.25*h, y-b1-h}, config.primaryColor)
+  -- Drawn after the bar and before the text, so it runs over the bar and under the numbers
+  w.glint = quad(glasses, {0, y-b1}, {0, y-b1}, {0, y-b1-h}, {0, y-b1-h}, 0xFFFFFF)
+  w.glint.setAlpha(GLINT_ALPHA)
+  w.glint.setVisible(false)
   w.percent = text(glasses, {0.5*h, y-b1-h/1.8-fs}, fs, config.primaryColor)
   w.curr = text(glasses, {b2+3.25*h+1, y-b1-h/2-fs}, fs/1.3, config.textColor)
   w.max = text(glasses, {-2.25*h+l, y-b1-h/2-fs}, fs/1.3, config.textColor)
@@ -95,11 +103,60 @@ function hud.start(cfg)
   return #terminals
 end
 
--- data: from lsc.read; view: {rate = arrows or '', eut = EU/t or nil, lowPower, maintenanceOk}
+local function blinkPhase(now)
+  return math.floor(now * 2) % 2 == 0
+end
+
+-- The glint's span along the filled part, or nil when it is hidden
+local function glintSpan(now, fill)
+  local direction = lastView.direction or 0
+  if not config.barAnimation or direction == 0 or fill < GLINT_WIDTH * 2 then
+    return nil
+  end
+  -- Moves in whole pixels, so an unchanged position sends nothing
+  local cycle = fill + GLINT_WIDTH
+  local step = math.floor(now * GLINT_SPEED) % math.floor(cycle)
+  local head = direction > 0 and step or (cycle - step)
+  return math.max(0, head - GLINT_WIDTH), math.min(fill, head)
+end
+
+-- Called several times a second between updates: moves the glint and blinks the bar.
+-- Each widget call is sent to every player wearing the glasses, so only changes are sent.
+function hud.animate(now)
+  if not lastData then
+    return
+  end
+  local barColor = config.primaryColor
+  if lastView.lowPower and (not config.lowPowerBlink or blinkPhase(now)) then
+    barColor = config.issueColor
+  end
+  local fill = l * lastData.percent
+  local from, to = glintSpan(now, fill)
+  for _, t in ipairs(terminals) do
+    local w = t.widgets
+    if changed(t, 'barColor', barColor) then
+      w.energyBar.setColor(RGB(barColor))
+    end
+    local visible = from ~= nil and to > from
+    if changed(t, 'glintVisible', visible) then
+      w.glint.setVisible(visible)
+    end
+    if visible and changed(t, 'glint', from .. ',' .. to) then
+      -- Same slant as the bar: the top edge sits h further left than the bottom edge
+      local x = b2 + 3.25*h
+      w.glint.setVertex(1, x + from, y-b1)
+      w.glint.setVertex(2, x + to, y-b1)
+      w.glint.setVertex(3, x + to - h, y-b1-h)
+      w.glint.setVertex(4, x + from - h, y-b1-h)
+    end
+  end
+end
+
+-- data: from lsc.read; view: {rate = arrows or '', eut, direction, lowPower}
 function hud.update(data, view)
   local fs = config.fontSize
   local small = fs / 1.3 / 3
-  blinkOn = not blinkOn
+  lastData, lastView = data, view
 
   local percentText = format.percent(data.percent)
   local curr = config.showCurrentEU and format.eu(data.stored, config.metric) or ''
@@ -121,10 +178,6 @@ function hud.update(data, view)
   end
   local alert = table.concat(alerts, '  ')
 
-  local barColor = config.primaryColor
-  if view.lowPower and (blinkOn or not config.lowPowerBlink) then
-    barColor = config.issueColor
-  end
   local percentColor = view.lowPower and config.issueColor or config.primaryColor
 
   for _, t in ipairs(terminals) do
@@ -133,9 +186,6 @@ function hud.update(data, view)
     if changed(t, 'fill', fill) then
       w.energyBar.setVertex(2, b2+3.25*h+fill, y-b1)
       w.energyBar.setVertex(3, b2+2.25*h+fill, y-b1-h)
-    end
-    if changed(t, 'barColor', barColor) then
-      w.energyBar.setColor(RGB(barColor))
     end
     if changed(t, 'percent', percentText) then
       w.percent.setText(percentText)

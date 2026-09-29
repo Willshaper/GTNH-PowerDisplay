@@ -52,17 +52,17 @@ local function wholeNumber(text)
   if text:find('x10', 1, true) or text:find('%d[eE][%+%-]?%d') then
     return nil
   end
-  local digits = text:gsub('%D', '')
-  if digits == '' then
+  -- The first number only: older versions add text such as "(last 5 seconds)" after it
+  local sign, number = text:match("(%-?)(%d[%d,%.' ]*)")
+  if not number then
     return nil
   end
-  local negative = text:find('^%s*%-') ~= nil
-  local value = tonumber(digits)
-  return negative and -value or value
+  local value = tonumber((number:gsub('%D', '')))
+  return sign == '-' and -value or value
 end
 
 -- Parses sensor lines into a table with the fields named in KEYS, plus
--- maintenanceOk and timeToText. Missing values stay nil.
+-- maintenanceOk. Missing values stay nil.
 function lsc.parse(lines)
   local info = {}
   for _, line in ipairs(lines or {}) do
@@ -89,14 +89,15 @@ function lsc.parse(lines)
 end
 
 -- The LSC to read: config.lscAddress if set, otherwise the only gt_machine, or the
--- first one whose sensor lines look like an LSC. Returns a proxy or nil.
+-- first one whose sensor lines look like an LSC. Returns a proxy, or nil and how many
+-- GregTech machines the computer can see.
 function lsc.find(address)
   if address then
     local ok, full = pcall(component.get, address)
     if ok and full then
       return component.proxy(full)
     end
-    return nil
+    return nil, 0
   end
   local machines = {}
   for addr in component.list('gt_machine') do
@@ -116,7 +117,7 @@ function lsc.find(address)
       end
     end
   end
-  return nil
+  return nil, #machines
 end
 
 -- Reads everything once. Returns a table:
@@ -133,8 +134,17 @@ function lsc.read(machine, config)
     -- The component getters are exact; the sensor lines are a fallback
     local okStored, stored = pcall(machine.getEUStored)
     local okMax, capacity = pcall(machine.getEUMaxStored)
-    data.stored = (okStored and tonumber(stored)) or data.stored or 0
-    data.capacity = (okMax and tonumber(capacity)) or data.capacity or 0
+    -- The getters stop at Long.MAX (about 9.2e18 EU); the sensor lines don't
+    local LONG_MAX = 9.2e18
+    stored = okStored and tonumber(stored)
+    capacity = okMax and tonumber(capacity)
+    if not stored or (stored >= LONG_MAX and data.stored) then
+      stored = data.stored
+    end
+    if not capacity or (capacity >= LONG_MAX and data.capacity) then
+      capacity = data.capacity
+    end
+    data.stored, data.capacity = stored or 0, capacity or 0
   end
   if data.capacity and data.capacity > 0 then
     data.percent = math.max(0, math.min(data.stored / data.capacity, 1))
