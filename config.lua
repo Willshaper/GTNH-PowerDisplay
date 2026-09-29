@@ -72,6 +72,7 @@ return {
   borderBottom = 2,
   borderTop = 2,
   fontSize = 3,
+  euTFontSize = 3,      -- size of the EU/t text and arrows in the middle of the bar
 
   -- HUD transparency (0 to 1)
   shapeAlpha = 0.9,

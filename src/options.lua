@@ -20,6 +20,7 @@ local DEFAULTS = {
   showAverages = true,
   showEUt = true,
   euTSeconds = 5,
+  euTFontSize = 3,
 
   wirelessMode = false,
   wirelessMax = 1e15,
@@ -139,6 +140,7 @@ local function check(config)
     boolean(config, key)
   end
   number(config, 'euTSeconds', 1)
+  number(config, 'euTFontSize', 1)
   number(config, 'wirelessMax', 1)
 
   for _, key in ipairs({'height', 'length', 'fontSize'}) do

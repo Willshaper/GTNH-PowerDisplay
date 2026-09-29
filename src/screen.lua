@@ -121,6 +121,7 @@ local function usePalette()
   for _, color in ipairs({
     COLOR.background, COLOR.text, COLOR.dim, COLOR.faint, COLOR.good, COLOR.bad, COLOR.warn, COLOR.graph,
     config.primaryColor, config.secondaryColor, config.textColor, config.textColorEmpty, config.issueColor,
+    config.borderColor,
   }) do
     if not seen[color] and #colors < 16 then
       seen[color] = true
@@ -240,17 +241,14 @@ function screen.message(title, lines, color)
   return true
 end
 
--- Left-to-right fill with eighth blocks
-local EIGHTHS = {'▏', '▎', '▍', '▌', '▋', '▊', '▉'}
-
 -- Blinks twice a second, whatever the update interval
 local function blinkPhase(now)
   return math.floor(now * 2) % 2 == 0
 end
 
-local PERCENT_WIDTH = 8 -- columns left of the bar for the percentage, as on the HUD
-
--- Cells of the bar's middle line that text covers: index (0-based along the bar) -> char
+-- Text on the bar's middle line: cell index (0-based across the inside) -> char.
+-- The percentage on the left, the EU/t in the middle with its arrows after it while
+-- charging and before it while discharging, so the number itself doesn't move.
 local function barTexts(size, now)
   local data, view = lastData, lastView
   local cells = {}
@@ -262,15 +260,9 @@ local function barTexts(size, now)
       end
     end
   end
-  if config.showCurrentEU then
-    put(1, format.eu(data.stored, config.metric))
+  if config.showPercent then
+    put(1, format.percent(data.percent))
   end
-  if config.showMaxEU then
-    local max = format.eu(data.capacity, config.metric)
-    put(size - 1 - unicode.len(max), max)
-  end
-  -- EU/t in the middle; the arrows after it while charging, before it while
-  -- discharging, so the number itself doesn't move
   local eut = ''
   if config.showEUt and view.eut then
     eut = format.rate(view.eut, config.metric) .. ' EU/t'
@@ -288,20 +280,20 @@ local function barTexts(size, now)
   return cells
 end
 
--- The bar, three lines tall and slanted like the HUD's: each line starts one column
--- further right. Values are written on the middle line; every text cell is dark over
--- the filled part and light over the empty part.
+-- The bar: a rectangle in a thin frame, three lines tall. Screen characters are about
+-- twice as tall as they are wide, so the frame is one character wide at the sides and
+-- half a line (half blocks) at the top and bottom; the fill is two lines tall with the
+-- text line in its middle. Text is dark over the filled part and light over the empty part.
 local function drawBar(now)
   local data, view = lastData, lastView
-  local size = width - PERCENT_WIDTH - 3 -- the bottom line ends at the screen's edge
+  local size = width - 4 -- a margin and the frame on each side
   local fillColor = config.primaryColor
   if view.lowPower and (not config.lowPowerBlink or blinkPhase(now)) then
     fillColor = config.issueColor
   end
   local emptyColor = config.secondaryColor
-  local filled = data.percent * size
-  local full = math.floor(filled)
-  local part = math.floor((filled - full) * 8)
+  local frame = config.borderColor
+  local full = math.floor(data.percent * size + 0.5)
   local texts = barTexts(size, now)
 
   for line = 0, 2 do
@@ -314,26 +306,21 @@ local function drawBar(now)
         table.insert(segments, {text, fg, bg})
       end
     end
-    local lead = PERCENT_WIDTH + line
-    if line == 1 and config.showPercent then
-      local percentColor = view.lowPower and config.issueColor or config.primaryColor
-      add(pad(format.percent(data.percent), PERCENT_WIDTH - 1, true) .. string.rep(' ', lead - PERCENT_WIDTH + 1), percentColor, COLOR.background)
-    else
-      add(string.rep(' ', lead), COLOR.text, COLOR.background)
-    end
+    add(' ', COLOR.text, COLOR.background)
+    add(' ', COLOR.text, frame)
     for i = 0, size - 1 do
-      local text = line == 1 and texts[i] or nil
-      local overFill = i < full or (i == full and part >= 4)
-      if text then
-        add(text, overFill and config.textColor or config.textColorEmpty, overFill and fillColor or emptyColor)
-      elseif i < full then
-        add(' ', COLOR.text, fillColor)
-      elseif i == full and part > 0 then
-        add(EIGHTHS[part], fillColor, emptyColor)
+      local inside = i < full and fillColor or emptyColor
+      if line == 0 then
+        add('▄', inside, frame) -- frame above, bar below
+      elseif line == 2 then
+        add('▀', inside, frame) -- bar above, frame below
+      elseif texts[i] then
+        add(texts[i], i < full and config.textColor or config.textColorEmpty, inside)
       else
-        add(' ', COLOR.text, emptyColor)
+        add(' ', COLOR.text, inside)
       end
     end
+    add(' ', COLOR.text, frame)
     row(barRow + line, segments)
   end
 end
@@ -425,7 +412,7 @@ function screen.update(data, view)
   drawBar(now)
   y = y + 4
 
-  -- Time to full or empty, and what the EU/t on the bar means
+  -- Stored and max EU, and the time to full or empty
   local timeText = ''
   if config.showTimeTo then
     if data.percent >= 0.9995 and (view.eut or 0) >= 0 then
@@ -440,11 +427,27 @@ function screen.update(data, view)
       timeText = 'Measuring...'
     end
   end
-  local note = ''
-  if config.showEUt then
-    note = string.format(' EU/t: average over %ss', config.euTSeconds)
+  local left = {}
+  if config.showCurrentEU then
+    table.insert(left, {' ' .. format.eu(data.stored, metric, 2), COLOR.text})
   end
-  split(y, {{note, COLOR.faint}}, {{timeText .. ' ', COLOR.text}})
+  if config.showMaxEU then
+    table.insert(left, {(config.showCurrentEU and ' / ' or ' '), COLOR.dim})
+    table.insert(left, {format.eu(data.capacity, metric, 2), COLOR.text})
+  end
+  if #left > 0 then
+    table.insert(left, {' EU', COLOR.dim})
+  end
+  -- What the EU/t on the bar means, when the line has room for it
+  local note = string.format('   EU/t: average over %ss', config.euTSeconds)
+  local used = len(timeText) + 2
+  for _, s in ipairs(left) do
+    used = used + len(s[1])
+  end
+  if config.showEUt and used + len(note) <= width then
+    table.insert(left, {note, COLOR.faint})
+  end
+  split(y, left, {{timeText .. ' ', COLOR.text}})
   y = y + 2
 
   -- GT's own averages, when there is room for them

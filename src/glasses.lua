@@ -65,8 +65,12 @@ local function defineLabels()
   local fs = config.fontSize
   local small = fs / 1.3 / 3
   local textY = y - b1 - h/2 - fs
+  -- The EU/t and its arrows have their own size, centred on the bar's height
+  -- (letters are 7 pixels tall at scale 1)
+  local big = config.euTFontSize / 3
+  local bigY = y - b1 - h/2 - 3.5*big
   local function eutLeft()
-    return 3*h + l/2 - textWidth(eutText, small)/2
+    return 3*h + l/2 - textWidth(eutText, big)/2
   end
   labels = {
     percent = {scale = fs / 3, y = y - b1 - h/1.8 - fs, x = function(text)
@@ -79,15 +83,15 @@ local function defineLabels()
     curr = {scale = small, y = textY, onBar = true, x = function() return b2 + 3.25*h + 1 end},
     max = {scale = small, y = textY, onBar = true, x = function(text) return 2.25*h + l - 1.5*fs*(#text - 1) end},
     -- Centred on the middle of the slanted bar
-    eut = {scale = small, y = textY, onBar = true, eut = true, x = eutLeft},
+    eut = {scale = big, y = bigY, onBar = true, eut = true, x = eutLeft},
     -- After the EU/t while charging, before it while discharging; the number itself
     -- stays put while the arrows grow
-    arrows = {scale = small, y = textY, onBar = true, eut = true, x = function(text)
-      local gap = textWidth(' ', small)
+    arrows = {scale = big, y = bigY, onBar = true, eut = true, x = function(text)
+      local gap = textWidth(' ', big)
       if (lastView and lastView.direction or 0) > 0 then
-        return eutLeft() + textWidth(eutText, small) + gap
+        return eutLeft() + textWidth(eutText, big) + gap
       end
-      return eutLeft() - gap - textWidth(text, small)
+      return eutLeft() - gap - textWidth(text, big)
     end},
     alert = {scale = fs / 3, y = y - b1 - b2 - h - 3*fs, x = function() return b2 end},
   }
