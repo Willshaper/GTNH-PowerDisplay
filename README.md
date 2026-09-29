@@ -71,7 +71,7 @@ To update, run the `wget` line above again. Your `config.lua` is kept; the curre
 |---|---|---|
 | `showHud` / `showScreen` | `true` / `true` | Where to show the display. |
 | `resolution`, `fullscreen`, `GUIscale` | `{1920, 1080}`, `true`, `3` | Your Minecraft window, used to place the HUD. |
-| `hudSide` | `'left'` | Bottom corner for the HUD. `'right'` is a mirror image of the left layout: the bar fills leftwards and slants the other way. It needs the right `resolution`. |
+| `hudSide` | `'left'` | Bottom corner for the HUD. `'right'` mirrors the shapes: the bar fills leftwards and slants the other way, and the percentage sits at the right edge. The text on the bar reads the same as on the left. It needs the right `resolution`. |
 | `showPercent` | `true` | Charge percentage: next to the HUD bar, inside the screen's bar. |
 | `showCurrentEU`, `showMaxEU` | `true` | Stored and maximum EU: on the HUD bar, under the screen's bar. |
 | `showEUt` | `true` | Net EU/t in the middle of the bar (HUD and screen). |

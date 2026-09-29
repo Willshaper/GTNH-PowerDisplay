@@ -1,6 +1,7 @@
 -- The HUD bar on AR glasses (OCGlasses glasses terminals). Same look as upstream.
--- With hudSide = 'right' everything is mirrored across the screen: the bar fills
--- leftwards from the right edge and slants the other way. Text still reads normally.
+-- With hudSide = 'right' the shapes are mirrored across the screen: the bar fills
+-- leftwards from the right edge and slants the other way. The text on the bar reads
+-- exactly as on the left side (stored EU, EU/t, max EU, in that order).
 local component = require('component')
 local format = require('src.format')
 
@@ -56,8 +57,9 @@ local function quad(glasses, v1, v2, v3, v4, color)
   return q
 end
 
--- Text labels. `x` gives the left edge of the text in the left-side layout; on the
--- right side the text's whole span is mirrored, so it keeps its place against the bar.
+-- Text labels. `x` gives the left edge of the text in the left-side layout. On the
+-- right side, text on the bar keeps its order and just moves over with the bar;
+-- the percentage and alert are mirrored, so they keep their place at the edge.
 -- `onBar` labels sit on the bar and use two widgets each (see barParts).
 local labels = {}
 
@@ -100,10 +102,15 @@ end
 local function labelX(name, text)
   local label = labels[name]
   local x = label.x(text)
-  if mirrored then
-    return screenWidth - x - textWidth(text, label.scale)
+  if not mirrored then
+    return x
   end
-  return x
+  if label.onBar then
+    -- The mirrored bar spans the same width, starting where the left one ends
+    -- (measured halfway up, where the text is)
+    return x + screenWidth - 2*(b2 + 2.75*h) - l
+  end
+  return screenWidth - x - textWidth(text, label.scale)
 end
 
 -- Is this screen x over the filled part of the bar? Measured at the text's height,
@@ -241,17 +248,13 @@ local function blinkPhase(now)
   return math.floor(now * 2) % 2 == 0
 end
 
--- ">", ">>", ">>>" while charging, "<" ... while discharging; mirrored on the right side.
+-- ">", ">>", ">>>" while charging, "<" ... while discharging, on both sides.
 -- Without the EU/t text they sit in the middle of the bar on their own.
 local function arrowsText(now)
   if not config.showArrows then
     return ''
   end
-  local arrows = format.arrows(lastView.direction, now)
-  if mirrored then
-    arrows = arrows:gsub('.', {['<'] = '>', ['>'] = '<'})
-  end
-  return arrows
+  return format.arrows(lastView.direction, now)
 end
 
 -- Called several times a second between updates: animates the arrows and blinks the

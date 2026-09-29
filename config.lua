@@ -44,7 +44,8 @@ return {
   resolution = {1920, 1080},
   fullscreen = true,
   GUIscale = 3,
-  -- Which bottom corner the HUD sits in: 'left' or 'right' (a mirror image of left).
+  -- Which bottom corner the HUD sits in: 'left' or 'right' (the shapes are mirrored,
+  -- the text on the bar reads the same).
   -- 'right' needs the resolution above to be right.
   hudSide = 'left',
 
