@@ -51,7 +51,7 @@ To use the MFU upgrade, sneak right-click the LSC controller before placing it i
 4) Right-click the glasses terminal with the AR glasses to link them. Wear them in a bauble slot, Tinkers mask slot, or helmet slot.
 5) Shift-click all the components into the computer case and press the power button.
 6) Enter `install`, then Y and Y. The OpenOS floppy is not needed afterwards.
-7) Install Power Display by pasting this line into the computer (middle-click to paste). It asks whether this is the Power Display computer (connected to the LSC) or a viewer (see "Showing it on another computer"); answer 1 here.
+7) Install Power Display by pasting this line into the computer (middle-click to paste). It asks what to install: 1 for Power Display, 2 for a viewer (see "Showing it on another computer"), 3 for the HUD on its own (see "HUD only").
 
         wget -f https://raw.githubusercontent.com/Willshaper/GTNH-PowerDisplay/main/setup.lua && setup
 
@@ -143,6 +143,10 @@ A tier 3 computer case has three card slots. With a graphics card, internet card
 
 Each linked card only talks to its pair, so the Power Display computer sends to every linked card it has: one pair per viewer.
 
+## HUD only
+
+For just the glasses HUD, without the screen monitor, generator control or linked cards, answer 3 when installing. The computer needs the adapter on the LSC and a glasses terminal, but no screen. It installs only what the HUD needs, with a `config.lua` that has just the HUD and LSC settings. Start it with `hudonly`.
+
 ## Multiplayer
 
 Every glasses terminal connected to the computer shows the HUD, so several players can share one computer. They all get the same settings.
@@ -152,6 +156,7 @@ Every glasses terminal connected to the computer shows the HUD, so several playe
     ls                       list the files
     edit config.lua          change the settings
     viewer                   show another Power Display computer's display (linked card)
+    hudonly                  just the glasses HUD (installed with answer 3)
     uninstall                remove Power Display (asks before removing config.lua)
     hud 2>/errors.log        save a long error message, then: edit /errors.log
 

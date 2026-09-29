@@ -7,6 +7,7 @@ local dir = shell.getWorkingDirectory()
 local files = {
   'hud.lua',
   'viewer.lua',
+  'hudonly.lua',
   'setup.lua',
   'uninstall.lua',
   'config.default.lua',
@@ -48,7 +49,8 @@ local file = io.open(shrc, 'r')
 if file then
   local kept, removed = {}, false
   for line in file:lines() do
-    if line:find('&& hud', 1, true) or line:find('&& viewer', 1, true) then
+    local program = line:match('&&%s*(%w+)%s*$')
+    if program == 'hud' or program == 'viewer' or program == 'hudonly' then
       removed = true
     else
       table.insert(kept, line)

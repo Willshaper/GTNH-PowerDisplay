@@ -1,6 +1,6 @@
--- Installs or updates Power Display in the current folder, either the main program
--- (on the computer connected to the LSC) or the viewer (on a computer that shows it
--- through a linked card). It asks which.
+-- Installs or updates Power Display in the current folder: the main program (on the
+-- computer connected to the LSC), the viewer (on a computer that shows it through a
+-- linked card), or the HUD on its own (connected to the LSC). It asks which.
 --   wget -f https://raw.githubusercontent.com/Willshaper/GTNH-PowerDisplay/main/setup.lua && setup
 -- Optional arguments: setup [branch] [repo raw URL]
 local shell = require('shell')
@@ -13,7 +13,7 @@ local repo = args[2] or 'https://raw.githubusercontent.com/Willshaper/GTNH-Power
 local api = 'https://api.github.com/repos/Willshaper/GTNH-PowerDisplay/commits/'
 local dir = shell.getWorkingDirectory()
 
--- What each kind of install gets. `only` are the files the other kind doesn't use.
+-- What each kind of install gets
 local ROLES = {
   {
     program = 'hud',
@@ -22,7 +22,6 @@ local ROLES = {
     files = {'hud.lua', 'setup.lua', 'uninstall.lua', 'src/format.lua', 'src/lsc.lua', 'src/options.lua',
       'src/glasses.lua', 'src/screen.lua', 'src/generators.lua', 'src/link.lua'},
     config = 'config.lua',
-    only = {'hud.lua', 'src/lsc.lua', 'src/generators.lua'},
   },
   {
     program = 'viewer',
@@ -31,7 +30,14 @@ local ROLES = {
     files = {'viewer.lua', 'setup.lua', 'uninstall.lua', 'src/format.lua', 'src/options.lua',
       'src/glasses.lua', 'src/screen.lua', 'src/link.lua'},
     config = 'config.viewer.lua',
-    only = {'viewer.lua'},
+  },
+  {
+    program = 'hudonly',
+    name = 'Power Display (HUD only)',
+    description = 'HUD only: this computer is connected to the LSC and only draws the glasses HUD',
+    files = {'hudonly.lua', 'setup.lua', 'uninstall.lua', 'src/format.lua', 'src/lsc.lua', 'src/options.lua',
+      'src/glasses.lua'},
+    config = 'config.hudonly.lua',
   },
 }
 
@@ -45,25 +51,20 @@ local function ask(question)
   return answer ~= nil and answer:lower():sub(1, 1) == 'y'
 end
 
--- Which install: asked every time, only 1 or 2 is accepted
+-- Which install: asked every time, only 1, 2 or 3 is accepted
 print('What should be installed on this computer?')
 for i, role in ipairs(ROLES) do
   print('  ' .. i .. ') ' .. role.description)
 end
-local role, other
+local role
 repeat
-  io.write('Enter 1 or 2: ')
+  io.write('Enter 1, 2 or 3: ')
   local answer = io.read()
   if answer == nil then
     print('Nothing was installed.')
     return
   end
-  answer = answer:match('^%s*(.-)%s*$')
-  if answer == '1' then
-    role, other = ROLES[1], ROLES[2]
-  elseif answer == '2' then
-    role, other = ROLES[2], ROLES[1]
-  end
+  role = ROLES[tonumber(answer:match('^%s*(%d)%s*$'))]
 until role
 print()
 
@@ -152,16 +153,22 @@ if filesystem.exists(path('config.default.lua')) then
   print('Your config.lua was kept. The settings ' .. role.name .. ' uses are listed in config.default.lua.')
 end
 
--- Files of the other kind of install, from an earlier install on this computer
-local leftover = {}
-for _, file in ipairs(other.only) do
-  if filesystem.exists(path(file)) then
-    table.insert(leftover, file)
+-- Files only the other kinds of install use, from an earlier install on this computer
+local mine, leftover = {}, {}
+for _, file in ipairs(role.files) do
+  mine[file] = true
+end
+for _, each in ipairs(ROLES) do
+  for _, file in ipairs(each.files) do
+    if not mine[file] and filesystem.exists(path(file)) then
+      mine[file] = true -- listed once
+      table.insert(leftover, file)
+    end
   end
 end
 if #leftover > 0 then
   print()
-  print('This computer also has files of ' .. other.name .. ': ' .. table.concat(leftover, ', '))
+  print('This computer also has files that ' .. role.name .. " doesn't use: " .. table.concat(leftover, ', '))
   if ask('Remove them?') then
     for _, file in ipairs(leftover) do
       filesystem.remove(path(file))
@@ -172,6 +179,7 @@ end
 
 -- Auto-start: OpenOS runs every line of /home/.shrc when the shell starts
 local shrc = (os.getenv('HOME') or '/home') .. '/.shrc'
+-- Returns the auto-start line for any of the programs, and which program it starts
 local function autostartLine()
   local file = io.open(shrc, 'r')
   if not file then
@@ -180,20 +188,23 @@ local function autostartLine()
   local content = file:read('*a')
   file:close()
   for line in content:gmatch('[^\n]+') do
-    if line:find('&& hud', 1, true) or line:find('&& viewer', 1, true) then
-      return line
+    local program = line:match('&&%s*(%w+)%s*$')
+    for _, each in ipairs(ROLES) do
+      if program == each.program then
+        return line, program
+      end
     end
   end
   return nil
 end
 
 print()
-local existing = autostartLine()
-if existing and existing:find('&& ' .. role.program, 1, true) then
+local existing, starts = autostartLine()
+if starts == role.program then
   print('Auto-start is already on (' .. shrc .. ').')
 elseif existing then
-  print('Auto-start in ' .. shrc .. ' starts ' .. other.name .. ': ' .. existing)
-  print('Edit that line to start ' .. role.name .. ' instead (edit ' .. shrc .. ').')
+  print('Auto-start in ' .. shrc .. ' starts ' .. starts .. ': ' .. existing)
+  print('Edit that line to start ' .. role.program .. ' instead (edit ' .. shrc .. ').')
 elseif ask('Start ' .. role.name .. ' automatically when the computer boots?') then
   local file = io.open(shrc, 'a')
   file:write(string.format('cd "%s" && %s\n', dir, role.program))
