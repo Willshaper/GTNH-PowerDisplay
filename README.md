@@ -51,7 +51,7 @@ To use the MFU upgrade, sneak right-click the LSC controller before placing it i
 4) Right-click the glasses terminal with the AR glasses to link them. Wear them in a bauble slot, Tinkers mask slot, or helmet slot.
 5) Shift-click all the components into the computer case and press the power button.
 6) Enter `install`, then Y and Y. The OpenOS floppy is not needed afterwards.
-7) Install Power Display by pasting this line into the computer (middle-click to paste):
+7) Install Power Display by pasting this line into the computer (middle-click to paste). It asks whether this is the Power Display computer (connected to the LSC) or a viewer (see "Showing it on another computer"); answer 1 here.
 
         wget -f https://raw.githubusercontent.com/Willshaper/GTNH-PowerDisplay/main/setup.lua && setup
 
@@ -134,7 +134,7 @@ A second computer anywhere, even in another dimension, can show the same monitor
 
 1. Craft a pair of linked cards. Put one in the Power Display computer and set `linkedCard = true` in its `config.lua`.
 2. Build a second computer with a screen and graphics card (and a glasses terminal for the HUD there), and put the other linked card in it. It doesn't need an adapter or an LSC.
-3. Install Power Display on it the same way. The installer sees the linked card and offers to start the viewer on boot.
+3. Run the same install command on it and answer 2 (viewer). It installs only what the viewer needs, with its own `config.lua` that has just the settings for how things look.
 4. Run `viewer` there.
 
 The viewer uses its own `config.lua` for colours, sizes and what to show. The values (EU/t, time to full or empty, generator state) come from the Power Display computer. If nothing arrives for a while, the viewer says so.

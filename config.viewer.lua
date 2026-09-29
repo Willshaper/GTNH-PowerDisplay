@@ -1,4 +1,7 @@
--- Power Display settings. Restart the program after changing anything.
+-- Power Display viewer settings: how this computer shows the display it receives
+-- through its linked card. The values themselves (EU/t, time to full or empty,
+-- generator state) come from the Power Display computer. Restart the viewer after
+-- changing anything.
 -- Each setting ends with a comma. Anything you delete falls back to its default.
 
 local colors = {
@@ -36,7 +39,7 @@ local colors = {
 
 return {
 
-  -- Where to show it: AR glasses HUD, the computer's screen, or both
+  -- Where to show it: AR glasses HUD, this computer's screen, or both
   showHud = true,
   showScreen = true,
 
@@ -54,15 +57,10 @@ return {
   showCurrentEU = true,
   showMaxEU = true,
   showEUt = true,       -- net EU/t in the middle of the bar
-  euTAverage = 5,       -- the EU/t is the average over this many seconds (HUD and screen)
   showArrows = true,    -- animated > >> >>> after the EU/t while charging, <<< before it while discharging (HUD and screen)
 
   -- Maintenance status: "Has Problems!" on the HUD, status and warning on the screen
   showMaintenance = true,
-
-  -- Wireless mode: show the wireless network's EU instead of the LSC's own
-  wirelessMode = false,
-  wirelessMax = 1e15,   -- the wireless network has no maximum; this is what counts as 100%
 
   -- Numbers as 4.4G (true) or 4.42e9 (false)
   metric = true,
@@ -97,24 +95,8 @@ return {
   lowPowerAlert = 20,
   lowPowerBlink = true,
 
-  -- Generator control, through a Redstone I/O block (the computer's redstone card is
-  -- only for wake on redstone)
-  generatorControl = false,
-  -- The Redstone I/O block's address, or its start, in quotes, e.g. '1a2b3c4d'. Find it
-  -- by shift-right-clicking the block with an Analyzer, or just start the program: the
-  -- screen lists the Redstone I/O blocks it can see.
-  generatorRedstoneAddress = false,
-  generatorSide = 'north',  -- which side of the Redstone I/O: north, south, east, west, top or bottom
-  generatorOnBelow = 20,    -- start the generators below this percentage
-  generatorOffAbove = 90,   -- stop them again above this percentage
-  -- 'stop': a redstone signal means stop
-  -- 'run':  a redstone signal means run
-  generatorSignal = 'stop',
-
   -- Screen: "Full in 5m 26s" / "Empty in 2h 03m" under the bar
   showTimeToFullOrEmpty = true,
-  timeToFullOrEmptyAverage = 30, -- worked out from the average EU/t over this many seconds
-  timeToFullOrEmptyUpdate = 5,   -- and updated every this many seconds
   -- Screen: GregTech's own In/Out/Net averages over 5 s, 5 min and 1 hour
   showAverages = true,
   -- Screen: a graph of the charge over the last historyMinutes minutes
@@ -122,15 +104,4 @@ return {
   historyMinutes = 30,
   -- Screen: show the LSC's passive loss under the Out column (Net always includes it)
   showPassiveLoss = true,
-
-  -- Which LSC to read if the computer sees more than one GregTech machine.
-  -- false finds it automatically; otherwise the start of its gt_machine address, e.g. 'e190015a'
-  lscAddress = false,
-
-  -- Send the display through the linked card(s) in this computer, to show it on another
-  -- computer's screen and glasses. Install the viewer there (same install command).
-  linkedCard = false,
-
-  -- Seconds between updates
-  sleep = 1,
 }

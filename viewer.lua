@@ -56,8 +56,6 @@ local function message(title, lines, color)
   end
 end
 
-local notes = {}
-
 -- The display settings sent by the Power Display computer (its generator set points,
 -- wireless mode, update interval) replace this computer's
 local function applySender(sender)
@@ -67,14 +65,12 @@ local function applySender(sender)
 end
 
 local function main()
-  if config.showHud and hud.start(config) == 0 then
-    table.insert(notes, 'No glasses terminal found')
+  -- Glasses are optional here; with none connected, the HUD is just left out
+  if config.showHud then
+    hud.start(config)
   end
   if config.showScreen and not screen.start(config) then
     print('No screen or graphics card found; showing the HUD only.')
-  end
-  if #notes > 0 and not screen.active() then
-    print(table.concat(notes, '. ') .. '.')
   end
 
   local waitingText = {'Nothing received yet. On the Power Display computer, set linkedCard = true',
@@ -104,7 +100,7 @@ local function main()
         else
           applySender(packet.config)
           local data, view = packet.data, packet.view
-          view.notes, view.remote = notes, true
+          view.remote = true
           view.lowPower = config.lowPowerAlert ~= false and data.percent * 100 < config.lowPowerAlert
           if config.showHud then
             hud.update(data, view)
