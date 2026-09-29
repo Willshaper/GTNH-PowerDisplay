@@ -22,7 +22,7 @@ local DEFAULTS = {
   showAverages = true,
   showEUt = true,
   euTAverage = 5,
-  euTFontSize = 3,
+  euTFontSize = false,
 
   wirelessMode = false,
   wirelessMax = 1e15,
@@ -134,7 +134,10 @@ local function check(config)
     boolean(config, key)
   end
   number(config, 'euTAverage', 1)
-  number(config, 'euTFontSize', 1)
+  if config.euTFontSize ~= false and not (isNumber(config.euTFontSize) and config.euTFontSize >= 1) then
+    problem(string.format('euTFontSize must be a size of at least 1, or false for the same size as the stored/max EU (it is %s)',
+      tostring(config.euTFontSize)))
+  end
   number(config, 'timeToFullOrEmptyAverage', 1)
   number(config, 'timeToFullOrEmptyUpdate', 1)
   number(config, 'wirelessMax', 1)

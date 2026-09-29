@@ -81,7 +81,7 @@ To update, run the `wget` line above again. Your `config.lua` is kept; the curre
 | `metric` | `true` | Numbers as `4.4G` or as `4.42e9`. |
 | `wirelessMode`, `wirelessMax` | `false`, `1e15` | Show the wireless network's EU instead. It has no maximum, so `wirelessMax` counts as 100%. |
 | `height`, `length`, `borderBottom`, `borderTop`, `fontSize` | | HUD size. |
-| `euTFontSize` | `3` | Size of the EU/t text and its arrows on the HUD bar (`fontSize` is the percentage's size). |
+| `euTFontSize` | `false` | Size of the EU/t text and its arrows on the HUD bar. `false`: the same size as the stored and max EU. A number sets its own size, on the same scale as `fontSize` (`3` is as big as the percentage). |
 | `shapeAlpha`, `textAlpha` | `0.9`, `1.0` | HUD transparency. |
 | `primaryColor`, `secondaryColor`, `issueColor` | | Bar colours: filled, empty, low power (HUD and screen). |
 | `borderColor` | | Colour of the frame around the bar (HUD and screen). |

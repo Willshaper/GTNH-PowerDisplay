@@ -67,10 +67,13 @@ local function defineLabels()
   local fs = config.fontSize
   local small = fs / 1.3 / 3
   local textY = y - b1 - h/2 - fs
-  -- The EU/t and its arrows have their own size, centred on the bar's height
-  -- (letters are 7 pixels tall at scale 1)
-  local big = config.euTFontSize / 3
-  local bigY = y - b1 - h/2 - 3.5*big
+  -- The EU/t and its arrows: the same size and line as the stored/max EU, or their
+  -- own size (euTFontSize) centred on the bar's height (letters are 7 pixels tall at scale 1)
+  local big, bigY = small, textY
+  if config.euTFontSize then
+    big = config.euTFontSize / 3
+    bigY = y - b1 - h/2 - 3.5*big
+  end
   local function eutLeft()
     return 3*h + l/2 - textWidth(eutText, big)/2
   end
