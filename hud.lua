@@ -108,10 +108,16 @@ end
 -- Reads and draws until C is pressed (returns) or something fails (raises an error)
 local function run(machine)
   local average = lsc.newAverage(config.euTSeconds)
+  -- "Full in" / "Empty in" uses its own, longer average and changes only every
+  -- timeToUpdate seconds, so it doesn't jump around
+  local timeAverage = lsc.newAverage(config.timeToSeconds)
+  local timeTo, timeToWhat, timeRate
+  local nextTimeTo = 0
   while true do
     local data = lsc.read(machine, config)
     local now = computer.uptime()
     average.add(now, data.stored)
+    timeAverage.add(now, data.stored)
 
     local view = {hudNote = hudNote, generatorProblem = generatorProblem}
     view.eut = average.value()
@@ -121,7 +127,14 @@ local function run(machine)
     elseif view.eut and view.eut <= -1 then
       view.direction = -1
     end
-    view.timeTo, view.timeToWhat = lsc.timeTo(data, view.eut)
+    if now + FRAME_SECONDS >= nextTimeTo then -- a little early rather than a whole update late
+      timeRate = timeAverage.value()
+      timeTo, timeToWhat = lsc.timeTo(data, timeRate)
+      if timeRate then
+        nextTimeTo = now + config.timeToUpdate
+      end
+    end
+    view.timeTo, view.timeToWhat, view.timeRate = timeTo, timeToWhat, timeRate
     view.lowPower = config.lowPowerAlert ~= false and data.percent * 100 < config.lowPowerAlert
 
     generators.update(data.percent)

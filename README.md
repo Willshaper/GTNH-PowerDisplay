@@ -95,6 +95,7 @@ To update, run the `wget` line above again. Your `config.lua` is kept; the curre
 | `generatorOnBelow`, `generatorOffAbove` | `20`, `90` | Start the generators below the first percentage, stop them above the second. |
 | `generatorSignal` | `'stop'` | `'stop'`: a signal means stop. `'run'`: a signal means run. |
 | `showTimeTo` | `true` | "Full in" / "Empty in" on the screen. |
+| `timeToSeconds`, `timeToUpdate` | `30`, `5` | "Full in" / "Empty in" uses the average EU/t over the last `timeToSeconds` seconds, and changes every `timeToUpdate` seconds. |
 | `showAverages` | `true` | GregTech's In/Out/Net averages (5 s, 5 min, 1 hour) on the screen. |
 | `showHistory` | `true` | Show the history graph on the screen. |
 | `historyMinutes` | `30` | How much time the screen's history graph covers. |

@@ -108,6 +108,8 @@ return {
 
   -- Screen: "Full in 5m 26s" / "Empty in 2h 03m" next to the net EU/t
   showTimeTo = true,
+  timeToSeconds = 30,   -- worked out from the average EU/t over this many seconds
+  timeToUpdate = 5,     -- and updated every this many seconds
   -- Screen: GregTech's own In/Out/Net averages over 5 s, 5 min and 1 hour
   showAverages = true,
   -- Screen: a graph of the charge over the last historyMinutes minutes

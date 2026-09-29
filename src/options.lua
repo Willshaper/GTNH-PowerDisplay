@@ -17,6 +17,8 @@ local DEFAULTS = {
   showMaxEU = true,
   showMaintenance = true,
   showTimeTo = true,
+  timeToSeconds = 30,
+  timeToUpdate = 5,
   showAverages = true,
   showEUt = true,
   euTSeconds = 5,
@@ -141,6 +143,8 @@ local function check(config)
   end
   number(config, 'euTSeconds', 1)
   number(config, 'euTFontSize', 1)
+  number(config, 'timeToSeconds', 1)
+  number(config, 'timeToUpdate', 1)
   number(config, 'wirelessMax', 1)
 
   for _, key in ipairs({'height', 'length', 'fontSize'}) do

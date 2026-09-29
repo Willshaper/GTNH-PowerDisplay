@@ -384,7 +384,7 @@ local function drawGraph(top, bottom)
 end
 
 -- data: from lsc.read
--- view: {eut, direction (1, -1 or 0), timeTo, timeToWhat, lowPower, generators (true/false/nil),
+-- view: {eut, direction (1, -1 or 0), timeTo, timeToWhat, timeRate, lowPower, generators (true/false/nil),
 --        generatorProblem, hudNote}
 function screen.update(data, view)
   if not gpu then
@@ -421,7 +421,7 @@ function screen.update(data, view)
       timeText = 'Empty'
     elseif view.timeTo then
       timeText = (view.timeToWhat == 'full' and 'Full in ' or 'Empty in ') .. format.duration(view.timeTo)
-    elseif view.eut then
+    elseif view.timeRate then
       timeText = 'Steady'
     else
       timeText = 'Measuring...'
@@ -437,15 +437,6 @@ function screen.update(data, view)
   end
   if #left > 0 then
     table.insert(left, {' EU', COLOR.dim})
-  end
-  -- What the EU/t on the bar means, when the line has room for it
-  local note = string.format('   EU/t: average over %ss', config.euTSeconds)
-  local used = len(timeText) + 2
-  for _, s in ipairs(left) do
-    used = used + len(s[1])
-  end
-  if config.showEUt and used + len(note) <= width then
-    table.insert(left, {note, COLOR.faint})
   end
   split(y, left, {{timeText .. ' ', COLOR.text}})
   y = y + 2
