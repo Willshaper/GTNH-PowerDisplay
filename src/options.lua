@@ -51,7 +51,8 @@ local DEFAULTS = {
   lowPowerBlink = true,
 
   generatorControl = false,
-  generatorSide = 'back',
+  generatorRedstoneAddress = false,
+  generatorSide = 'north',
   generatorOnBelow = 20,
   generatorOffAbove = 90,
   generatorSignal = 'stop',
@@ -64,10 +65,8 @@ local DEFAULTS = {
   sleep = 1,
 }
 
-local SIDES = {
-  bottom = true, top = true, back = true, front = true, right = true, left = true,
-  down = true, up = true, north = true, south = true, west = true, east = true,
-}
+-- A Redstone I/O block can't be turned, so its sides are compass directions
+local SIDES = {bottom = true, top = true, north = true, south = true, west = true, east = true}
 
 local problems
 
@@ -161,7 +160,10 @@ local function check(config)
     problem(string.format('barTextStyle must be "split" or "shadow" (it is %s)', tostring(config.barTextStyle)))
   end
   if not SIDES[config.generatorSide] then
-    problem(string.format('generatorSide must be one of back, front, left, right, top, bottom (it is %s)', tostring(config.generatorSide)))
+    problem(string.format('generatorSide must be one of north, south, east, west, top, bottom (it is %s)', tostring(config.generatorSide)))
+  end
+  if config.generatorRedstoneAddress ~= false and type(config.generatorRedstoneAddress) ~= 'string' then
+    problem("generatorRedstoneAddress must be the Redstone I/O block's address in quotes, e.g. '1a2b3c4d'")
   end
   number(config, 'generatorOnBelow', 0, 100)
   number(config, 'generatorOffAbove', 0, 100)

@@ -72,7 +72,7 @@ local function message(title, lines, color)
 end
 
 local hudNote -- shown in the screen's footer, e.g. when no glasses terminal is connected
-local generatorProblem -- why generator control can't run, shown on the screen
+local generatorProblem, generatorHint -- why generator control can't run, shown on the screen
 
 -- Finds the LSC, waiting until it can be read. Returns the proxy, or nil if C was pressed.
 local function waitForLSC()
@@ -119,7 +119,7 @@ local function run(machine)
     average.add(now, data.stored)
     timeAverage.add(now, data.stored)
 
-    local view = {hudNote = hudNote, generatorProblem = generatorProblem}
+    local view = {hudNote = hudNote, generatorProblem = generatorProblem, generatorHint = generatorHint}
     view.eut = average.value()
     view.direction = 0
     if view.eut and view.eut >= 1 then
@@ -163,9 +163,10 @@ local function main()
   if hudNote and not screen.active() then
     print(hudNote .. '; the HUD is not shown.')
   end
-  generatorProblem = generators.start(config)
+  generatorProblem, generatorHint = generators.start(config)
   if generatorProblem and not screen.active() then
     print('Generator control is off: ' .. generatorProblem)
+    print(generatorHint)
   end
 
   -- Anything other than C / Ctrl+Alt+C is shown and retried, so one bad read

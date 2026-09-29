@@ -484,6 +484,8 @@ function screen.update(data, view)
   if config.generatorControl then
     if view.generatorProblem then
       row(y, {{' Generators  ', COLOR.dim}, {'OFF  ' .. view.generatorProblem, COLOR.bad}})
+      row(y + 1, {{'             ' .. (view.generatorHint or ''), COLOR.dim}})
+      y = y + 1
     else
       local state, color = 'RUNNING', COLOR.good
       if view.generators == false then
@@ -491,7 +493,7 @@ function screen.update(data, view)
       end
       row(y, {
         {' Generators  ', COLOR.dim}, {state, color},
-        {string.format('   start below %s%%, stop above %s%%, signal on %s side',
+        {string.format('   start below %s%%, stop above %s%%, output: %s',
           config.generatorOnBelow, config.generatorOffAbove, config.generatorSide), COLOR.faint},
       })
     end

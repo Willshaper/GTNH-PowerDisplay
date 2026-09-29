@@ -36,7 +36,8 @@ The following requires EV circuits, epoxid, and titanium (late HV).
 - 1+ Cables
 - For the HUD: Glasses Terminal and AR Glasses
 - Optional: MFU, so the adapter can reach an LSC up to 16 blocks away
-- Optional: Redstone Card (tier 1 is enough), for generator control and for wake on redstone
+- Optional: Redstone Card (tier 1 is enough), for wake on redstone
+- Optional: Redstone I/O block, for generator control
 
 To use the MFU upgrade, sneak right-click the LSC controller before placing it inside the adapter. The LSC controller should highlight green to indicate that the location is set.
 
@@ -91,7 +92,8 @@ To update, run the `wget` line above again. Your `config.lua` is kept; the curre
 | `lowPowerAlert` | `20` | Percentage below which the low power alert shows. `false` turns it off. |
 | `lowPowerBlink` | `true` | Blink the bar while power is low. |
 | `generatorControl` | `false` | Turn on generator control (see below). |
-| `generatorSide` | `'back'` | Side of the computer the redstone signal comes out of. |
+| `generatorRedstoneAddress` | `false` | Address of the Redstone I/O block for generator control (the start is enough, e.g. `'1a2b3c4d'`). Required when `generatorControl` is on. |
+| `generatorSide` | `'north'` | Side of the Redstone I/O block the signal comes out of: `north`, `south`, `east`, `west`, `top` or `bottom`. |
 | `generatorOnBelow`, `generatorOffAbove` | `20`, `90` | Start the generators below the first percentage, stop them above the second. |
 | `generatorSignal` | `'stop'` | `'stop'`: a signal means stop. `'run'`: a signal means run. |
 | `showTimeToFullOrEmpty` | `true` | "Full in" / "Empty in" on the screen. |
@@ -106,19 +108,21 @@ To update, run the `wget` line above again. Your `config.lua` is kept; the curre
 
 ## Generator control
 
-With a redstone card in the computer, Power Display can start your generators when the LSC runs low and stop them when it is full enough. Between the two percentages the generators keep doing what they were doing, so they don't switch on and off all the time.
+With a Redstone I/O block connected to the computer, Power Display can start your generators when the LSC runs low and stop them when it is full enough. Between the two percentages the generators keep doing what they were doing, so they don't switch on and off all the time. The computer's redstone card isn't used for this; it stays free for wake on redstone.
 
-The recommended wiring uses `generatorSignal = 'stop'`: put a Machine Controller cover set to "Disable with Redstone" on each generator (or on whatever turns them on) and run the signal to it. The computer only sends a signal while the generators should stop. If the computer turns off, runs out of power, or can't read the LSC, the signal goes away and the generators run, so a failure never leaves your base without power.
+1. Place a Redstone I/O block and connect it to the computer with cable.
+2. Set `generatorControl = true` and `generatorRedstoneAddress` to the block's address. To find it, shift-right-click the block with an Analyzer, or start Power Display: while the address is missing, the screen lists every Redstone I/O block it can see.
+3. Set `generatorSide` to the side of the block your wiring leaves from (`north`, `south`, `east`, `west`, `top` or `bottom`).
 
-With `'run'` it is the other way around: the signal means run.
+The recommended wiring uses `generatorSignal = 'stop'`: put a Machine Controller cover set to "Disable with Redstone" on each generator (or on whatever turns them on) and run the signal to it. The block only sends a signal while the generators should stop. If Power Display can't read the LSC, or stops, it lets the generators run. With `'run'` it is the other way around: the signal means run.
 
-Use a redstone card in the computer case, not a Redstone I/O block. A card's output switches off when the computer does, which is what makes the fail-safe work; a Redstone I/O block keeps its last output. The side names (`back`, `left`, ...) are relative to the front of the computer case.
+A Redstone I/O block keeps its last signal when the computer turns off. That is safe in practice: the computer only loses power when the LSC is empty, and by then the generators have already been told to run. With auto-start and wake on redstone (below), the computer comes back and takes over again.
 
 ## Auto-start and wake on redstone
 
 A computer that runs out of power switches off and stays off. To have it come back by itself:
 
-1. Answer yes to both installer questions (or add `cd "/home" && hud` to `/home/.shrc`, and run `lua` then `require("component").redstone.setWakeThreshold(1)`).
+1. Answer yes to both installer questions (or add `cd "/home" && hud` to `/home/.shrc`, and set the redstone card's wake threshold to 1 in `lua`).
 2. Put a redstone card in the computer and wire a slow redstone clock (one pulse every 30 to 60 seconds) into it.
 
 Each pulse turns the computer on if it is off; a running computer ignores it. Power Display then starts with it.

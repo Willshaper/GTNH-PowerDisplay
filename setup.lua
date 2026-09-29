@@ -140,10 +140,21 @@ elseif ask('Start Power Display automatically when the computer boots?') then
   print('Auto-start on. Delete the hud line in ' .. shrc .. ' to turn it off.')
 end
 
+-- The computer's redstone card (a Redstone I/O block, used for generator control,
+-- is also a redstone component but doesn't sit in a slot)
+local function redstoneCard()
+  for address in component.list('redstone') do
+    local ok, slot = pcall(component.slot, address)
+    if ok and type(slot) == 'number' and slot >= 0 then
+      return component.proxy(address)
+    end
+  end
+end
+
 -- Wake on redstone: a rising redstone signal turns the computer on (a running
 -- computer ignores it), so a slow redstone clock restarts it after a power loss
-if component.isAvailable('redstone') then
-  local redstone = component.redstone
+local redstone = redstoneCard()
+if redstone then
   if redstone.getWakeThreshold() > 0 then
     print('Wake on redstone is already on (threshold ' .. redstone.getWakeThreshold() .. ').')
   elseif ask('Turn the computer on when it receives a redstone signal?') then

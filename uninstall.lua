@@ -63,9 +63,17 @@ if file then
   end
 end
 
+-- The computer's redstone card; a Redstone I/O block doesn't sit in a slot
+local card
+for address in component.list('redstone') do
+  local ok, slot = pcall(component.slot, address)
+  if ok and type(slot) == 'number' and slot >= 0 then
+    card = component.proxy(address)
+  end
+end
+
 -- Other programs may rely on wake on redstone, so only turn it off when asked
-if component.isAvailable('redstone') and component.redstone.getWakeThreshold() > 0
-    and ask('Turn off wake on redstone for this computer?') then
-  component.redstone.setWakeThreshold(0)
+if card and card.getWakeThreshold() > 0 and ask('Turn off wake on redstone for this computer?') then
+  card.setWakeThreshold(0)
   print('Wake on redstone off.')
 end

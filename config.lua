@@ -97,12 +97,17 @@ return {
   lowPowerAlert = 20,
   lowPowerBlink = true,
 
-  -- Generator control (needs a redstone card in the computer)
+  -- Generator control, through a Redstone I/O block (the computer's redstone card is
+  -- only for wake on redstone)
   generatorControl = false,
-  generatorSide = 'back',   -- back, front, left, right, top or bottom
+  -- The Redstone I/O block's address, or its start, in quotes, e.g. '1a2b3c4d'. Find it
+  -- by shift-right-clicking the block with an Analyzer, or just start the program: the
+  -- screen lists the Redstone I/O blocks it can see.
+  generatorRedstoneAddress = false,
+  generatorSide = 'north',  -- which side of the Redstone I/O: north, south, east, west, top or bottom
   generatorOnBelow = 20,    -- start the generators below this percentage
   generatorOffAbove = 90,   -- stop them again above this percentage
-  -- 'stop': a redstone signal means stop (the generators run if this computer turns off)
+  -- 'stop': a redstone signal means stop
   -- 'run':  a redstone signal means run
   generatorSignal = 'stop',
 
