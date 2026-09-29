@@ -64,7 +64,7 @@ To use the MFU upgrade, sneak right-click the LSC controller before placing it i
 
 Enter `hud`. It runs until you press C (or Ctrl+Alt+C). Restart it after changing `config.lua`.
 
-To update, run the `wget` line above again. Your `config.lua` is kept; the current defaults are saved next to it as `config.default.lua`, so you can see any new settings.
+To update, run the `wget` line above again. It asks whether to replace your `config.lua` with a fresh one (only the settings of the chosen install, at their defaults); the old one is then saved as `config.old.lua`. If you keep yours, the current defaults are saved next to it as `config.default.lua`, so you can see any new settings.
 
 ## Settings
 
