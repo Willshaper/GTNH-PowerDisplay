@@ -214,7 +214,6 @@ end
 -- Left-to-right fill with eighth blocks
 local EIGHTHS = {'▏', '▎', '▍', '▌', '▋', '▊', '▉'}
 
-
 -- Blinks twice a second, whatever the update interval
 local function blinkPhase(now)
   return math.floor(now * 2) % 2 == 0

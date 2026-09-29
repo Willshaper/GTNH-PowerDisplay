@@ -2,7 +2,7 @@
 
 An OpenComputers (OC) program for GT New Horizons that shows your Lapotronic Supercapacitor (LSC) in real time, both as a HUD on AR glasses and as a full monitor on the computer's own screen. It can also switch backup generators on and off, and warn you when power runs low.
 
-This is a fork of [DylanTaylor1/GTNH-PowerDisplay](https://github.com/DylanTaylor1/GTNH-PowerDisplay). The HUD looks the same as the original.
+This is a fork of [DylanTaylor1/GTNH-PowerDisplay](https://github.com/DylanTaylor1/GTNH-PowerDisplay). The HUD keeps the original's design.
 
 ![FoxHUD](media/FoxHUD.png?)
 
@@ -83,7 +83,7 @@ To update, run the `wget` line above again. Your `config.lua` is kept; the curre
 | `height`, `length`, `borderBottom`, `borderTop`, `fontSize` | | HUD size. |
 | `shapeAlpha`, `textAlpha` | `0.9`, `1.0` | HUD transparency. |
 | `primaryColor`, `secondaryColor`, `issueColor`, `borderColor` | | HUD colours. |
-| `textColor`, `textColorEmpty` | black, `0xE6E6E6` | Text on the bar: `textColor` over the filled part, `textColorEmpty` over the empty part. |
+| `textColor`, `textColorEmpty` | `colors.black`, `colors.offWhite` | Text on the bar: `textColor` over the filled part, `textColorEmpty` over the empty part. |
 | `euTColor` | `false` | One fixed colour for the EU/t text and arrows. `false` switches like the other text. |
 | `lowPowerAlert` | `20` | Percentage below which the low power alert shows. `false` turns it off. |
 | `lowPowerBlink` | `true` | Blink the bar while power is low. |

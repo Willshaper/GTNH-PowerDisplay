@@ -45,7 +45,6 @@ local DEFAULTS = {
 
   lowPowerAlert = 20,
   lowPowerBlink = true,
-  showPassiveLoss = true,
 
   generatorControl = false,
   generatorSide = 'back',
@@ -53,6 +52,7 @@ local DEFAULTS = {
   generatorOffAbove = 90,
   generatorSignal = 'stop',
 
+  showPassiveLoss = true,
   showHistory = true,
   historyMinutes = 30,
   lscAddress = false,

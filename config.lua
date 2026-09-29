@@ -21,6 +21,7 @@ local colors = {
   white = 0xFFFFFF,
   gray = 0x3C5B72,
   lightGray = 0xA9A9A9,
+  offWhite = 0xE6E6E6,
   darkGray = 0x181828,
 
   electricBlue = 0x00A6FF,
@@ -53,7 +54,7 @@ return {
   showMaxEU = true,
   showEUt = true,       -- net EU/t in the middle of the bar
   euTSeconds = 5,       -- EU/t is the average over this many seconds (HUD and screen)
-  showArrows = true,    -- animated > >> >>> after the EU/t while charging, <<< before it while discharging
+  showArrows = true,    -- animated > >> >>> after the EU/t while charging, <<< before it while discharging (HUD and screen)
 
   -- Maintenance status: "Has Problems!" on the HUD, status and warning on the screen
   showMaintenance = true,
@@ -80,7 +81,7 @@ return {
   primaryColor = colors.electricBlue,
   secondaryColor = colors.darkSlateBlue,
   textColor = colors.black,       -- text over the filled part of the bar
-  textColorEmpty = 0xE6E6E6,     -- text over the empty part of the bar
+  textColorEmpty = colors.offWhite, -- text over the empty part of the bar
   euTColor = false,     -- one fixed colour for the EU/t text and arrows; false switches like the rest
   issueColor = colors.red,
   borderColor = colors.darkGray,
@@ -88,7 +89,6 @@ return {
   -- Low power alert: the bar turns red below this percentage (false turns it off)
   lowPowerAlert = 20,
   lowPowerBlink = true,
-
 
   -- Generator control (needs a redstone card in the computer)
   generatorControl = false,

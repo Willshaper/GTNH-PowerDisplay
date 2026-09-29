@@ -41,8 +41,8 @@ function format.rate(value, metric, decimals)
   if value == nil then
     return '-'
   end
-  local rounded = math.floor(math.abs(value) + 0.5)
-  if rounded == 0 then
+  -- Under 1 EU/t counts as steady (no arrows), so it shows as 0 too
+  if math.abs(value) < 1 then
     return '0'
   end
   return (value > 0 and '+' or '-') .. format.eu(math.abs(value), metric, decimals)

@@ -196,9 +196,10 @@ local function blinkPhase(now)
   return math.floor(now * 2) % 2 == 0
 end
 
--- ">", ">>", ">>>" while charging, "<" ... while discharging; mirrored on the right side
+-- ">", ">>", ">>>" while charging, "<" ... while discharging; mirrored on the right side.
+-- Without the EU/t text they sit in the middle of the bar on their own.
 local function arrowsText(now)
-  if not config.showArrows or eutText == '' then
+  if not config.showArrows then
     return ''
   end
   local arrows = format.arrows(lastView.direction, now)

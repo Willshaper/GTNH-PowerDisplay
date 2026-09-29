@@ -185,16 +185,13 @@ function lsc.newAverage(seconds)
     return (last.stored - first.stored) / ticks
   end
 
-  function average.reset()
-    samples = {}
-  end
-
   return average
 end
 
 -- Seconds until full (rate > 0) or empty (rate < 0). Returns seconds, "full" or "empty".
+-- Below 1 EU/t either way it counts as steady, the same as the arrows.
 function lsc.timeTo(data, rate)
-  if rate == nil or math.abs(rate) < 0.5 then
+  if rate == nil or math.abs(rate) < 1 then
     return nil
   end
   if rate > 0 then
