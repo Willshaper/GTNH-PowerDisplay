@@ -70,6 +70,7 @@ To update, run the `wget` line above again. Your `config.lua` is kept; the curre
 |---|---|---|
 | `showHud` / `showScreen` | `true` / `true` | Where to show the display. |
 | `resolution`, `fullscreen`, `GUIscale` | `{1920, 1080}`, `true`, `3` | Your Minecraft window, used to place the HUD. |
+| `hudSide` | `'left'` | Bottom corner for the HUD. `'right'` is a mirror image of the left layout: the bar fills leftwards and slants the other way. It needs the right `resolution`. |
 | `showCurrentEU`, `showMaxEU` | `true` | Stored and maximum EU on the HUD. |
 | `showRate` | `true` | Arrows next to the stored EU, from `<<<` (draining fast) to `>>>` (charging fast). |
 | `rateThreshold` | `0.003` | How much the fill must change per update for one more arrow. |
@@ -87,6 +88,7 @@ To update, run the `wget` line above again. Your `config.lua` is kept; the curre
 | `generatorSide` | `'back'` | Side of the computer the redstone signal comes out of. |
 | `generatorOnBelow`, `generatorOffAbove` | `20`, `90` | Start the generators below the first percentage, stop them above the second. |
 | `generatorSignal` | `'stop'` | `'stop'`: a signal means stop. `'run'`: a signal means run. |
+| `showHistory` | `true` | Show the history graph on the screen. |
 | `historyMinutes` | `30` | How much time the screen's history graph covers. |
 | `showPassiveLoss` | `true` | Show the LSC's passive loss on the screen. The Net column includes it either way. |
 | `lscAddress` | `false` | Only needed if the computer sees more than one GregTech machine: the start of the LSC's `gt_machine` address. |

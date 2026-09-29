@@ -9,6 +9,7 @@ local DEFAULTS = {
   resolution = {1920, 1080},
   fullscreen = true,
   GUIscale = 3,
+  hudSide = 'left',
 
   showCurrentEU = true,
   showRate = true,
@@ -49,6 +50,7 @@ local DEFAULTS = {
   generatorOffAbove = 90,
   generatorSignal = 'stop',
 
+  showHistory = true,
   historyMinutes = 30,
   lscAddress = false,
 
@@ -115,10 +117,13 @@ local function check(config)
     problem('resolution must look like {1920, 1080}')
   end
   boolean(config, 'fullscreen')
+  if config.hudSide ~= 'left' and config.hudSide ~= 'right' then
+    problem(string.format('hudSide must be "left" or "right" (it is %s)', tostring(config.hudSide)))
+  end
   number(config, 'GUIscale', 1, 10)
 
   for _, key in ipairs({'showCurrentEU', 'showRate', 'showMaxEU', 'showEUt', 'wirelessMode', 'metric', 'lowPowerBlink',
-      'barAnimation', 'showPassiveLoss', 'generatorControl'}) do
+      'barAnimation', 'showPassiveLoss', 'showHistory', 'generatorControl'}) do
     boolean(config, key)
   end
   number(config, 'euTSeconds', 1)

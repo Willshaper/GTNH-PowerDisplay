@@ -152,7 +152,7 @@ function screen.stop()
 end
 
 function screen.addSample(time, fraction)
-  if not gpu then
+  if not gpu or not config.showHistory then
     return
   end
   local index = math.floor(time / bucketSeconds)
@@ -464,7 +464,7 @@ function screen.update(data, view)
   end
 
   -- History graph in the space that is left
-  if footer - 1 - y >= 3 then
+  if config.showHistory and footer - 1 - y >= 3 then
     row(y, {{string.format(' History, last %s min', config.historyMinutes), COLOR.dim}})
     drawGraph(y + 1, footer - 1)
   end

@@ -43,6 +43,9 @@ return {
   resolution = {1920, 1080},
   fullscreen = true,
   GUIscale = 3,
+  -- Which bottom corner the HUD sits in: 'left' or 'right' (a mirror image of left).
+  -- 'right' needs the resolution above to be right.
+  hudSide = 'left',
 
   -- HUD values
   showCurrentEU = true,
@@ -96,7 +99,8 @@ return {
   -- 'run':  a redstone signal means run
   generatorSignal = 'stop',
 
-  -- Screen: how many minutes the history graph covers
+  -- Screen: a graph of the charge over the last historyMinutes minutes
+  showHistory = true,
   historyMinutes = 30,
   -- Screen: show the LSC's passive loss under the averages (Net always includes it)
   showPassiveLoss = true,
