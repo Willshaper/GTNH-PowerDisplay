@@ -48,7 +48,7 @@ return {
   -- 'right' needs the resolution above to be right.
   hudSide = 'left',
 
-  -- HUD values
+  -- Values on the bar (HUD and screen)
   showPercent = true,   -- charge % left of the bar
   showCurrentEU = true,
   showMaxEU = true,
@@ -77,12 +77,17 @@ return {
   shapeAlpha = 0.9,
   textAlpha = 1.0,
 
-  -- HUD colours (see the list at the top)
+  -- Colours (see the list at the top). The bar and its text look the same on the screen.
   primaryColor = colors.electricBlue,
   secondaryColor = colors.darkSlateBlue,
-  textColor = colors.black,       -- text over the filled part of the bar
+  textColor = colors.black,         -- text over the filled part of the bar
   textColorEmpty = colors.offWhite, -- text over the empty part of the bar
-  euTColor = false,     -- one fixed colour for the EU/t text and arrows; false switches like the rest
+  -- How text on the HUD bar stays readable:
+  -- 'split':  each letter takes textColor or textColorEmpty, whichever part of the bar it is over
+  -- 'shadow': textColorEmpty text with a textColor shadow (use this if 'split' leaves gaps
+  --           or overlaps in the text, which can happen with resource-pack fonts)
+  barTextStyle = 'split',
+  euTColor = false,     -- one fixed colour for the EU/t text and arrows; false follows barTextStyle
   issueColor = colors.red,
   borderColor = colors.darkGray,
 

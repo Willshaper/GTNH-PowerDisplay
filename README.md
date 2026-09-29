@@ -8,11 +8,11 @@ This is a fork of [DylanTaylor1/GTNH-PowerDisplay](https://github.com/DylanTaylo
 
 ## What's new in this fork
 
-- **Screen monitor:** stored and max EU, a smooth charge bar, net EU/t, GregTech's own in/out averages (5 s, 5 min, 1 h), time until full or empty, passive loss, generator state and a history graph.
+- **Screen monitor:** the same bar as the HUD (percentage, stored EU, net EU/t with arrows, max EU, in the HUD's colours), plus time until full or empty, GregTech's own in/out averages (5 s, 5 min, 1 h), passive loss, generator state and a history graph.
 - **EU/t on the HUD:** net EU/t in the middle of the bar, averaged over the number of seconds you choose.
 - **Low power alert:** below a percentage you set, the bar turns red and blinks, and "Low power!" shows above it.
 - **Charge arrows:** animated `>` `>>` `>>>` after the EU/t while charging, `<<<` before it while discharging.
-- **Readable text:** text on the bar is dark over the filled part and light over the empty part.
+- **Readable text:** text on the bar is dark over the filled part and light over the empty part, letter by letter.
 - **Generator control (optional):** a redstone signal that starts your generators below one percentage and stops them above another.
 - **Starts by itself:** auto-start on boot, and wake on redstone so a redstone clock turns the computer back on after a power loss.
 - **Keeps running:** waits for the LSC at boot, and recovers by itself if a read fails (for example while the chunk reloads).
@@ -72,19 +72,21 @@ To update, run the `wget` line above again. Your `config.lua` is kept; the curre
 | `showHud` / `showScreen` | `true` / `true` | Where to show the display. |
 | `resolution`, `fullscreen`, `GUIscale` | `{1920, 1080}`, `true`, `3` | Your Minecraft window, used to place the HUD. |
 | `hudSide` | `'left'` | Bottom corner for the HUD. `'right'` is a mirror image of the left layout: the bar fills leftwards and slants the other way. It needs the right `resolution`. |
-| `showPercent` | `true` | Charge percentage next to the HUD bar. |
-| `showCurrentEU`, `showMaxEU` | `true` | Stored and maximum EU on the HUD. |
-| `showEUt` | `true` | Net EU/t in the middle of the HUD bar. |
-| `showArrows` | `true` | Animated `>` `>>` `>>>` after the EU/t while charging, `<` `<<` `<<<` before it while discharging (HUD and screen). |
+| `showPercent` | `true` | Charge percentage next to the bar (HUD and screen). |
+| `showCurrentEU`, `showMaxEU` | `true` | Stored and maximum EU on the bar (HUD and screen). |
+| `showEUt` | `true` | Net EU/t in the middle of the bar (HUD and screen). |
+| `showArrows` | `true` | Animated arrows after the EU/t while charging (nothing, `>`, `>>`, `>>>`, repeating) and before it while discharging (`<` to `<<<`), on the HUD and the screen. |
 | `euTSeconds` | `5` | EU/t is averaged over this many seconds (HUD and screen). |
 | `showMaintenance` | `true` | Maintenance status: "Has Problems!" on the HUD, and the status and warning on the screen. |
 | `metric` | `true` | Numbers as `4.4G` or as `4.42e9`. |
 | `wirelessMode`, `wirelessMax` | `false`, `1e15` | Show the wireless network's EU instead. It has no maximum, so `wirelessMax` counts as 100%. |
 | `height`, `length`, `borderBottom`, `borderTop`, `fontSize` | | HUD size. |
 | `shapeAlpha`, `textAlpha` | `0.9`, `1.0` | HUD transparency. |
-| `primaryColor`, `secondaryColor`, `issueColor`, `borderColor` | | HUD colours. |
-| `textColor`, `textColorEmpty` | `colors.black`, `colors.offWhite` | Text on the bar: `textColor` over the filled part, `textColorEmpty` over the empty part. |
-| `euTColor` | `false` | One fixed colour for the EU/t text and arrows. `false` switches like the other text. |
+| `primaryColor`, `secondaryColor`, `issueColor` | | Bar colours: filled, empty, low power (HUD and screen). |
+| `borderColor` | | Colour of the HUD's border. |
+| `textColor`, `textColorEmpty` | `colors.black`, `colors.offWhite` | Text on the bar: `textColor` over the filled part, `textColorEmpty` over the empty part (HUD and screen). |
+| `barTextStyle` | `'split'` | How text on the HUD bar stays readable. `'split'`: each letter is `textColor` over the filled part and `textColorEmpty` over the empty part. `'shadow'`: `textColorEmpty` text with a `textColor` shadow. Use `'shadow'` if `'split'` leaves small gaps or overlaps in the text (possible with resource-pack fonts). |
+| `euTColor` | `false` | One fixed colour for the EU/t text and arrows. `false` follows `barTextStyle`. |
 | `lowPowerAlert` | `20` | Percentage below which the low power alert shows. `false` turns it off. |
 | `lowPowerBlink` | `true` | Blink the bar while power is low. |
 | `generatorControl` | `false` | Turn on generator control (see below). |

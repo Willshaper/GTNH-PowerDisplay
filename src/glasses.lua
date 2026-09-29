@@ -58,7 +58,7 @@ end
 
 -- Text labels. `x` gives the left edge of the text in the left-side layout; on the
 -- right side the text's whole span is mirrored, so it keeps its place against the bar.
--- `onBar` labels sit on the bar and change colour with what is behind them.
+-- `onBar` labels sit on the bar and use two widgets each (see barParts).
 local labels = {}
 
 local function defineLabels()
@@ -102,15 +102,48 @@ local function labelX(name, text)
   return x
 end
 
--- Dark text over the filled part of the bar, light text over the empty part
-local function labelColor(name, text)
-  local label = labels[name]
-  if label.eut and config.euTColor then
-    return config.euTColor
+-- Is this screen x over the filled part of the bar? Measured at the text's height,
+-- halfway up the slanted bar.
+local function overFill(x)
+  local edge = b2 + 2.75*h + l * (lastData and lastData.percent or 0)
+  if mirrored then
+    return x > screenWidth - edge
   end
-  local fillEnd = b2 + 2.75*h + l * (lastData and lastData.percent or 0) -- at the text's height
-  local centre = label.x(text) + textWidth(text, label.scale) / 2
-  return centre < fillEnd and config.textColor or config.textColorEmpty
+  return x < edge
+end
+
+-- How to draw a label that sits on the bar, as two parts {text, x, y, color}:
+--   'split':  the text is cut where the fill ends, dark over the fill and light over
+--             the empty part, so every letter contrasts with what is behind it
+--   'shadow': light text over a dark copy shifted down and right, like Minecraft's
+--             own text shadow; readable on both, whatever the font
+local function barParts(name, value)
+  local label = labels[name]
+  local x = labelX(name, value)
+  local fixed = label.eut and config.euTColor or nil
+  if config.barTextStyle == 'shadow' then
+    local offset = label.scale -- Minecraft's shadow is 1 pixel at scale 1
+    return {value, x, label.y, fixed or config.textColorEmpty},
+      {value, x + offset, label.y + offset, config.textColor}
+  end
+  if fixed or value == '' then
+    return {value, x, label.y, fixed or config.textColor}, {'', x, label.y, config.textColor}
+  end
+  local parts = {}
+  local position = x
+  for c in value:gmatch('.') do
+    local width = (CHAR_WIDTH[c] or 6) * label.scale
+    local color = overFill(position + width/2) and config.textColor or config.textColorEmpty
+    local last = parts[#parts]
+    if last and last[4] == color then
+      last[1] = last[1] .. c
+    else
+      parts[#parts + 1] = {c, position, label.y, color}
+    end
+    position = position + width
+  end
+  -- The fill is one piece, so the text crosses its edge at most once
+  return parts[1], parts[2] or {'', position, label.y, parts[1][4]}
 end
 
 local function text(glasses, name, color)
@@ -134,20 +167,27 @@ local function changed(terminal, key, value)
   return true
 end
 
+-- part: {text, x, y, color or nil}
+local function setPart(terminal, key, part)
+  local widget = terminal.widgets[key]
+  if changed(terminal, key, part[1]) then
+    widget.setText(part[1])
+  end
+  if changed(terminal, key .. 'Pos', part[2] .. ',' .. part[3]) then
+    widget.setPosition(part[2], part[3])
+  end
+  if part[4] and changed(terminal, key .. 'Color', part[4]) then
+    widget.setColor(RGB(part[4]))
+  end
+end
+
 local function setLabel(terminal, name, value)
-  local widget = terminal.widgets[name]
-  if changed(terminal, name, value) then
-    widget.setText(value)
-  end
-  local x = labelX(name, value)
-  if changed(terminal, name .. 'X', x) then
-    widget.setPosition(x, labels[name].y)
-  end
   if labels[name].onBar then
-    local color = labelColor(name, value)
-    if changed(terminal, name .. 'Color', color) then
-      widget.setColor(RGB(color))
-    end
+    local first, second = barParts(name, value)
+    setPart(terminal, name, first)
+    setPart(terminal, name .. '2', second)
+  else
+    setPart(terminal, name, {value, labelX(name, value), labels[name].y})
   end
 end
 
@@ -163,10 +203,11 @@ local function draw(glasses)
   -- Energy bar and values
   w.energyBar = quad(glasses, {b2+3.25*h, y-b1}, {b2+3.25*h, y-b1}, {b2+2.25*h, y-b1-h}, {b2+2.25*h, y-b1-h}, config.primaryColor)
   w.percent = text(glasses, 'percent', config.primaryColor)
-  w.curr = text(glasses, 'curr', config.textColor)
-  w.max = text(glasses, 'max', config.textColor)
-  w.eut = text(glasses, 'eut', config.textColor)
-  w.arrows = text(glasses, 'arrows', config.textColor)
+  -- Two widgets per text on the bar; the second first, so a shadow is drawn underneath
+  for _, name in ipairs({'curr', 'max', 'eut', 'arrows'}) do
+    w[name .. '2'] = text(glasses, name, config.textColor)
+    w[name] = text(glasses, name, config.textColor)
+  end
   w.alert = text(glasses, 'alert', config.issueColor)
   return w
 end

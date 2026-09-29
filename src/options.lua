@@ -39,6 +39,7 @@ local DEFAULTS = {
   secondaryColor = 0x303850,
   textColor = 0x000000,
   textColorEmpty = 0xE6E6E6,
+  barTextStyle = 'split',
   euTColor = false, -- false: textColor or textColorEmpty, whichever part of the bar it is over
   issueColor = 0xFF0000,
   borderColor = 0x181828,
@@ -155,6 +156,9 @@ local function check(config)
 
   percentOrFalse(config, 'lowPowerAlert')
 
+  if config.barTextStyle ~= 'split' and config.barTextStyle ~= 'shadow' then
+    problem(string.format('barTextStyle must be "split" or "shadow" (it is %s)', tostring(config.barTextStyle)))
+  end
   if not SIDES[config.generatorSide] then
     problem(string.format('generatorSide must be one of back, front, left, right, top, bottom (it is %s)', tostring(config.generatorSide)))
   end

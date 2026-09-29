@@ -16,8 +16,6 @@ local COLOR = {
   good = 0x55FF55,
   bad = 0xFF5555,
   warn = 0xFFFF55,
-  bar = 0x55AAFF,
-  barEmpty = 0x333333,
   graph = 0x55FFFF,
   background = 0x000000,
 }
@@ -29,9 +27,9 @@ local drawn = {} -- y -> signature of what is on that row
 local touched = {} -- rows written during the current frame
 local fg, bg -- current GPU colours, to skip needless calls
 local config
-local barRow -- screen row of the bar's first line (nil when not drawn)
-local netRow -- screen row of the Net EU/t line
+local barRow -- screen row of the bar's top line (nil when not drawn)
 local lastData, lastView -- for animation frames between updates
+local savedPalette = {} -- palette index -> colour before we changed it
 
 -- History graph: one sample per bucket, averaged
 local history = {} -- list of fractions 0..1, oldest first
@@ -111,6 +109,32 @@ local function pad(text, size, right)
   return right and (string.rep(' ', gap) .. text) or (text .. string.rep(' ', gap))
 end
 
+-- Tier 2 screens show 16 colours, picked from a palette the program can change.
+-- Setting the palette to the colours in use shows them exactly (the HUD's blues
+-- instead of the nearest default colour). stop() puts the old palette back.
+local function usePalette()
+  savedPalette = {}
+  if gpu.getDepth() < 4 then
+    return
+  end
+  local colors, seen = {}, {}
+  for _, color in ipairs({
+    COLOR.background, COLOR.text, COLOR.dim, COLOR.faint, COLOR.good, COLOR.bad, COLOR.warn, COLOR.graph,
+    config.primaryColor, config.secondaryColor, config.textColor, config.textColorEmpty, config.issueColor,
+  }) do
+    if not seen[color] and #colors < 16 then
+      seen[color] = true
+      table.insert(colors, color)
+    end
+  end
+  for i, color in ipairs(colors) do
+    local ok, old = pcall(gpu.getPaletteColor, i - 1)
+    if ok and pcall(gpu.setPaletteColor, i - 1, color) then
+      savedPalette[i - 1] = old
+    end
+  end
+end
+
 -- Returns true if there is a screen to draw on
 function screen.start(cfg)
   config = cfg
@@ -125,6 +149,7 @@ function screen.start(cfg)
   local maxW, maxH = gpu.maxResolution()
   width, height = math.min(maxW, MAX_WIDTH), math.min(maxH, MAX_HEIGHT)
   gpu.setResolution(width, height)
+  usePalette()
   setColors(COLOR.text, COLOR.background)
   gpu.fill(1, 1, width, height, ' ')
 
@@ -143,6 +168,10 @@ function screen.stop()
     return
   end
   pcall(function()
+    for index, color in pairs(savedPalette) do
+      gpu.setPaletteColor(index, color)
+    end
+    savedPalette = {}
     gpu.setForeground(0xFFFFFF)
     gpu.setBackground(0x000000)
     gpu.setResolution(originalWidth, originalHeight)
@@ -219,84 +248,101 @@ local function blinkPhase(now)
   return math.floor(now * 2) % 2 == 0
 end
 
--- The bar, two rows tall
-local function drawBar(now)
-  local size = width - 2
-  local barColor = COLOR.bar
-  if lastView.lowPower and (not config.lowPowerBlink or blinkPhase(now)) then
-    barColor = COLOR.bad
-  end
-  local cells = lastData.percent * size
-  local full = math.floor(cells)
-  local part = math.floor((cells - full) * 8)
-  local text = string.rep('█', full)
-  if full < size and part > 0 then
-    text = text .. EIGHTHS[part]
-    full = full + 1
-  end
-  text = text .. string.rep(' ', size - full)
+local PERCENT_WIDTH = 8 -- columns left of the bar for the percentage, as on the HUD
 
-  -- Both lines are the same, so each is drawn right after the other
-  touched[barRow], touched[barRow + 1] = true, true
-  local key = text .. '\0' .. barColor
-  if drawn[barRow] == key then
-    return
-  end
-  drawn[barRow], drawn[barRow + 1] = key, key
-  setColors(COLOR.text, COLOR.background)
-  gpu.set(1, barRow, ' ')
-  gpu.set(1, barRow + 1, ' ')
-  setColors(barColor, COLOR.barEmpty)
-  gpu.set(2, barRow, text)
-  gpu.set(2, barRow + 1, text)
-end
-
--- Net EU/t over the configured window, animated arrows, and time to full or empty
-local function drawNet(now)
+-- Cells of the bar's middle line that text covers: index (0-based along the bar) -> char
+local function barTexts(size, now)
   local data, view = lastData, lastView
-  local rateColor = COLOR.dim
-  if view.direction == 1 then
-    rateColor = COLOR.good
-  elseif view.direction == -1 then
-    rateColor = COLOR.bad
+  local cells = {}
+  local function put(start, text)
+    for i = 1, unicode.len(text) do
+      local index = start + i - 1
+      if index >= 0 and index < size then
+        cells[index] = unicode.sub(text, i, i)
+      end
+    end
   end
-  local timeText
-  if not config.showTimeTo then
-    timeText = ''
-  elseif data.percent >= 0.9995 and (view.eut or 0) >= 0 then
-    timeText = 'Full'
-  elseif data.percent <= 0.0005 and (view.eut or 0) <= 0 then
-    timeText = 'Empty'
-  elseif view.timeTo then
-    timeText = (view.timeToWhat == 'full' and 'Full in ' or 'Empty in ') .. format.duration(view.timeTo)
-  elseif view.eut then
-    timeText = 'Steady'
-  else
-    timeText = 'Measuring...'
+  if config.showCurrentEU then
+    put(1, format.eu(data.stored, config.metric))
   end
-  -- Arrows after the number while charging, before it while discharging. Both sides
-  -- keep room for three, so the number doesn't move.
-  local before, after = '', ''
+  if config.showMaxEU then
+    local max = format.eu(data.capacity, config.metric)
+    put(size - 1 - unicode.len(max), max)
+  end
+  -- EU/t in the middle; the arrows after it while charging, before it while
+  -- discharging, so the number itself doesn't move
+  local eut = ''
+  if config.showEUt and view.eut then
+    eut = format.rate(view.eut, config.metric) .. ' EU/t'
+  end
+  local start = math.floor((size - unicode.len(eut)) / 2)
+  put(start, eut)
   if config.showArrows then
     local arrows = format.arrows(view.direction, now)
-    before = pad(view.direction < 0 and arrows or '', 3, true) .. ' '
-    after = ' ' .. pad(view.direction > 0 and arrows or '', 3)
+    if view.direction > 0 then
+      put(start + unicode.len(eut) + (eut == '' and 0 or 1), arrows)
+    elseif view.direction < 0 then
+      put(start - (eut == '' and 0 or 1) - unicode.len(arrows), arrows)
+    end
   end
-  split(netRow, {
-    {' Net  ', COLOR.dim},
-    {before, rateColor},
-    {format.rate(view.eut, config.metric, 2) .. ' EU/t', rateColor},
-    {after, rateColor},
-    {string.format('  (last %ss)', config.euTSeconds), COLOR.faint},
-  }, {{timeText .. ' ', COLOR.text}})
+  return cells
+end
+
+-- The bar, three lines tall and slanted like the HUD's: each line starts one column
+-- further right. Values are written on the middle line; every text cell is dark over
+-- the filled part and light over the empty part.
+local function drawBar(now)
+  local data, view = lastData, lastView
+  local size = width - PERCENT_WIDTH - 3 -- the bottom line ends at the screen's edge
+  local fillColor = config.primaryColor
+  if view.lowPower and (not config.lowPowerBlink or blinkPhase(now)) then
+    fillColor = config.issueColor
+  end
+  local emptyColor = config.secondaryColor
+  local filled = data.percent * size
+  local full = math.floor(filled)
+  local part = math.floor((filled - full) * 8)
+  local texts = barTexts(size, now)
+
+  for line = 0, 2 do
+    local segments = {}
+    local function add(text, fg, bg)
+      local last = segments[#segments]
+      if last and last[2] == fg and last[3] == bg then
+        last[1] = last[1] .. text
+      else
+        table.insert(segments, {text, fg, bg})
+      end
+    end
+    local lead = PERCENT_WIDTH + line
+    if line == 1 and config.showPercent then
+      local percentColor = view.lowPower and config.issueColor or config.primaryColor
+      add(pad(format.percent(data.percent), PERCENT_WIDTH - 1, true) .. string.rep(' ', lead - PERCENT_WIDTH + 1), percentColor, COLOR.background)
+    else
+      add(string.rep(' ', lead), COLOR.text, COLOR.background)
+    end
+    for i = 0, size - 1 do
+      local text = line == 1 and texts[i] or nil
+      local overFill = i < full or (i == full and part >= 4)
+      if text then
+        add(text, overFill and config.textColor or config.textColorEmpty, overFill and fillColor or emptyColor)
+      elseif i < full then
+        add(' ', COLOR.text, fillColor)
+      elseif i == full and part > 0 then
+        add(EIGHTHS[part], fillColor, emptyColor)
+      else
+        add(' ', COLOR.text, emptyColor)
+      end
+    end
+    row(barRow + line, segments)
+  end
 end
 
 -- Called several times a second between updates: animates the arrows and blinks the
--- bar. Only those rows are redrawn, and only when they changed.
+-- bar. Only the bar is redrawn, and only the lines that changed.
 function screen.animate(now)
   if gpu and barRow and lastData then
     drawBar(now)
-    drawNet(now)
   end
 end
 
@@ -375,22 +421,30 @@ function screen.update(data, view)
   split(y, {{' Power Display', COLOR.text}, {config.wirelessMode and '  (wireless)' or '', COLOR.dim}}, {status})
   y = y + 2
 
-  -- Stored and percentage
-  split(y, {
-    {config.wirelessMode and ' Wireless  ' or ' Stored  ', COLOR.dim},
-    {format.eu(data.stored, metric, 2), COLOR.text},
-    {' / ', COLOR.dim},
-    {format.eu(data.capacity, metric, 2), COLOR.text},
-    {' EU', COLOR.dim},
-  }, {{string.format('%.2f %% ', data.percent * 100), view.lowPower and COLOR.bad or COLOR.text}})
-  y = y + 1
-
   barRow = y
   drawBar(now)
-  y = y + 3
+  y = y + 4
 
-  netRow = y
-  drawNet(now)
+  -- Time to full or empty, and what the EU/t on the bar means
+  local timeText = ''
+  if config.showTimeTo then
+    if data.percent >= 0.9995 and (view.eut or 0) >= 0 then
+      timeText = 'Full'
+    elseif data.percent <= 0.0005 and (view.eut or 0) <= 0 then
+      timeText = 'Empty'
+    elseif view.timeTo then
+      timeText = (view.timeToWhat == 'full' and 'Full in ' or 'Empty in ') .. format.duration(view.timeTo)
+    elseif view.eut then
+      timeText = 'Steady'
+    else
+      timeText = 'Measuring...'
+    end
+  end
+  local note = ''
+  if config.showEUt then
+    note = string.format(' EU/t: average over %ss', config.euTSeconds)
+  end
+  split(y, {{note, COLOR.faint}}, {{timeText .. ' ', COLOR.text}})
   y = y + 2
 
   -- GT's own averages, when there is room for them
