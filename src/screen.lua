@@ -358,11 +358,13 @@ function screen.update(data, view)
   local y = 1
 
   -- Title and status
-  local status
-  if not data.maintenanceOk then
-    status = {' Maintenance needed ', COLOR.bad}
-  else
-    status = {' Maintenance OK ', COLOR.good}
+  local status = {'', COLOR.text}
+  if config.showMaintenance then
+    if data.maintenanceOk then
+      status = {' Maintenance OK ', COLOR.good}
+    else
+      status = {' Maintenance needed ', COLOR.bad}
+    end
   end
   split(y, {{' Power Display', COLOR.text}, {config.wirelessMode and '  (wireless)' or '', COLOR.dim}}, {status})
   y = y + 2
@@ -389,7 +391,9 @@ function screen.update(data, view)
     rateColor = COLOR.bad
   end
   local timeText
-  if data.percent >= 0.9995 and (view.eut or 0) >= 0 then
+  if not config.showTimeTo then
+    timeText = ''
+  elseif data.percent >= 0.9995 and (view.eut or 0) >= 0 then
     timeText = 'Full'
   elseif data.percent <= 0.0005 and (view.eut or 0) <= 0 then
     timeText = 'Empty'
@@ -409,8 +413,7 @@ function screen.update(data, view)
 
   -- GT's own averages, when there is room for them
   local footer = height
-  local wantTable = height >= 20
-  if wantTable then
+  if config.showAverages and height >= 20 then
     local c1, c2 = 12, 14
     row(y, {{pad('', c1) .. pad('In', c2, true) .. pad('Out', c2, true) .. pad('Net', c2, true), COLOR.faint}})
     local windows = {
@@ -443,6 +446,9 @@ function screen.update(data, view)
       })
       y = y + 1
     end
+  elseif config.showPassiveLoss then
+    row(y, {{' Passive loss  ', COLOR.dim}, {format.eu(data.passiveLoss, metric, 2), COLOR.text}, {' EU/t, included in Net', COLOR.faint}})
+    y = y + 2
   end
 
   -- Generators
@@ -474,7 +480,7 @@ function screen.update(data, view)
   if view.lowPower then
     table.insert(alerts, {string.format(' LOW POWER (below %s%%) ', config.lowPowerAlert), COLOR.bad})
   end
-  if not data.maintenanceOk then
+  if config.showMaintenance and not data.maintenanceOk then
     table.insert(alerts, {' MAINTENANCE NEEDED ', COLOR.bad})
   end
   if #alerts > 0 then

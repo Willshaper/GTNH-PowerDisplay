@@ -48,11 +48,15 @@ return {
   hudSide = 'left',
 
   -- HUD values
+  showPercent = true,   -- charge % left of the bar
   showCurrentEU = true,
   showRate = true,      -- arrows next to the stored EU: < slowly draining ... >>> charging fast
   showMaxEU = true,
   showEUt = true,       -- net EU/t in the middle of the bar
   euTSeconds = 5,       -- EU/t is the average over this many seconds (HUD and screen)
+
+  -- Maintenance status: "Has Problems!" on the HUD, status and warning on the screen
+  showMaintenance = true,
 
   -- Wireless mode: show the wireless network's EU instead of the LSC's own
   wirelessMode = false,
@@ -99,6 +103,10 @@ return {
   -- 'run':  a redstone signal means run
   generatorSignal = 'stop',
 
+  -- Screen: "Full in 5m 26s" / "Empty in 2h 03m" next to the net EU/t
+  showTimeTo = true,
+  -- Screen: GregTech's own In/Out/Net averages over 5 s, 5 min and 1 hour
+  showAverages = true,
   -- Screen: a graph of the charge over the last historyMinutes minutes
   showHistory = true,
   historyMinutes = 30,

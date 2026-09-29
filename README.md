@@ -71,11 +71,13 @@ To update, run the `wget` line above again. Your `config.lua` is kept; the curre
 | `showHud` / `showScreen` | `true` / `true` | Where to show the display. |
 | `resolution`, `fullscreen`, `GUIscale` | `{1920, 1080}`, `true`, `3` | Your Minecraft window, used to place the HUD. |
 | `hudSide` | `'left'` | Bottom corner for the HUD. `'right'` is a mirror image of the left layout: the bar fills leftwards and slants the other way. It needs the right `resolution`. |
+| `showPercent` | `true` | Charge percentage next to the HUD bar. |
 | `showCurrentEU`, `showMaxEU` | `true` | Stored and maximum EU on the HUD. |
 | `showRate` | `true` | Arrows next to the stored EU, from `<<<` (draining fast) to `>>>` (charging fast). |
 | `rateThreshold` | `0.003` | How much the fill must change per update for one more arrow. |
 | `showEUt` | `true` | Net EU/t in the middle of the HUD bar. |
 | `euTSeconds` | `5` | EU/t is averaged over this many seconds (HUD and screen). |
+| `showMaintenance` | `true` | Maintenance status: "Has Problems!" on the HUD, and the status and warning on the screen. |
 | `metric` | `true` | Numbers as `4.4G` or as `4.42e9`. |
 | `wirelessMode`, `wirelessMax` | `false`, `1e15` | Show the wireless network's EU instead. It has no maximum, so `wirelessMax` counts as 100%. |
 | `height`, `length`, `borderBottom`, `borderTop`, `fontSize` | | HUD size. |
@@ -88,6 +90,8 @@ To update, run the `wget` line above again. Your `config.lua` is kept; the curre
 | `generatorSide` | `'back'` | Side of the computer the redstone signal comes out of. |
 | `generatorOnBelow`, `generatorOffAbove` | `20`, `90` | Start the generators below the first percentage, stop them above the second. |
 | `generatorSignal` | `'stop'` | `'stop'`: a signal means stop. `'run'`: a signal means run. |
+| `showTimeTo` | `true` | "Full in" / "Empty in" on the screen. |
+| `showAverages` | `true` | GregTech's In/Out/Net averages (5 s, 5 min, 1 hour) on the screen. |
 | `showHistory` | `true` | Show the history graph on the screen. |
 | `historyMinutes` | `30` | How much time the screen's history graph covers. |
 | `showPassiveLoss` | `true` | Show the LSC's passive loss on the screen. The Net column includes it either way. |

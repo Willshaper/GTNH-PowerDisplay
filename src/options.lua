@@ -11,9 +11,13 @@ local DEFAULTS = {
   GUIscale = 3,
   hudSide = 'left',
 
+  showPercent = true,
   showCurrentEU = true,
   showRate = true,
   showMaxEU = true,
+  showMaintenance = true,
+  showTimeTo = true,
+  showAverages = true,
   showEUt = true,
   euTSeconds = 5,
 
@@ -122,7 +126,7 @@ local function check(config)
   end
   number(config, 'GUIscale', 1, 10)
 
-  for _, key in ipairs({'showCurrentEU', 'showRate', 'showMaxEU', 'showEUt', 'wirelessMode', 'metric', 'lowPowerBlink',
+  for _, key in ipairs({'showPercent', 'showMaintenance', 'showTimeTo', 'showAverages', 'showCurrentEU', 'showRate', 'showMaxEU', 'showEUt', 'wirelessMode', 'metric', 'lowPowerBlink',
       'barAnimation', 'showPassiveLoss', 'showHistory', 'generatorControl'}) do
     boolean(config, key)
   end

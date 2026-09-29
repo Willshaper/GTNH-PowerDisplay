@@ -233,7 +233,7 @@ function hud.update(data, view)
   if view.lowPower then
     table.insert(alerts, 'Low power!')
   end
-  if not data.maintenanceOk then
+  if config.showMaintenance and not data.maintenanceOk then
     table.insert(alerts, 'Has Problems!')
   end
 
@@ -246,7 +246,7 @@ function hud.update(data, view)
       setVertex(w.energyBar, 2, b2+3.25*h+fill, y-b1)
       setVertex(w.energyBar, 3, b2+2.25*h+fill, y-b1-h)
     end
-    setLabel(t, 'percent', format.percent(data.percent))
+    setLabel(t, 'percent', config.showPercent and format.percent(data.percent) or '')
     if changed(t, 'percentColor', percentColor) then
       w.percent.setColor(RGB(percentColor))
     end
