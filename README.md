@@ -11,7 +11,8 @@ This is a fork of [DylanTaylor1/GTNH-PowerDisplay](https://github.com/DylanTaylo
 - **Screen monitor:** stored and max EU, a smooth charge bar, net EU/t, GregTech's own in/out averages (5 s, 5 min, 1 h), time until full or empty, passive loss, generator state and a history graph.
 - **EU/t on the HUD:** net EU/t in the middle of the bar, averaged over the number of seconds you choose.
 - **Low power alert:** below a percentage you set, the bar turns red and blinks, and "Low power!" shows above it.
-- **Bar animation:** a light glint runs along the bar, left to right while charging and right to left while discharging.
+- **Charge arrows:** animated `>` `>>` `>>>` after the EU/t while charging, `<<<` before it while discharging.
+- **Readable text:** text on the bar is dark over the filled part and light over the empty part.
 - **Generator control (optional):** a redstone signal that starts your generators below one percentage and stops them above another.
 - **Starts by itself:** auto-start on boot, and wake on redstone so a redstone clock turns the computer back on after a power loss.
 - **Keeps running:** waits for the LSC at boot, and recovers by itself if a read fails (for example while the chunk reloads).
@@ -73,19 +74,19 @@ To update, run the `wget` line above again. Your `config.lua` is kept; the curre
 | `hudSide` | `'left'` | Bottom corner for the HUD. `'right'` is a mirror image of the left layout: the bar fills leftwards and slants the other way. It needs the right `resolution`. |
 | `showPercent` | `true` | Charge percentage next to the HUD bar. |
 | `showCurrentEU`, `showMaxEU` | `true` | Stored and maximum EU on the HUD. |
-| `showRate` | `true` | Arrows next to the stored EU, from `<<<` (draining fast) to `>>>` (charging fast). |
-| `rateThreshold` | `0.003` | How much the fill must change per update for one more arrow. |
 | `showEUt` | `true` | Net EU/t in the middle of the HUD bar. |
+| `showArrows` | `true` | Animated `>` `>>` `>>>` after the EU/t while charging, `<` `<<` `<<<` before it while discharging (HUD and screen). |
 | `euTSeconds` | `5` | EU/t is averaged over this many seconds (HUD and screen). |
 | `showMaintenance` | `true` | Maintenance status: "Has Problems!" on the HUD, and the status and warning on the screen. |
 | `metric` | `true` | Numbers as `4.4G` or as `4.42e9`. |
 | `wirelessMode`, `wirelessMax` | `false`, `1e15` | Show the wireless network's EU instead. It has no maximum, so `wirelessMax` counts as 100%. |
 | `height`, `length`, `borderBottom`, `borderTop`, `fontSize` | | HUD size. |
 | `shapeAlpha`, `textAlpha` | `0.9`, `1.0` | HUD transparency. |
-| `primaryColor`, `secondaryColor`, `textColor`, `euTColor`, `issueColor`, `borderColor` | | HUD colours. `euTColor = false` uses `textColor`. |
+| `primaryColor`, `secondaryColor`, `issueColor`, `borderColor` | | HUD colours. |
+| `textColor`, `textColorEmpty` | black, `0xE6E6E6` | Text on the bar: `textColor` over the filled part, `textColorEmpty` over the empty part. |
+| `euTColor` | `false` | One fixed colour for the EU/t text and arrows. `false` switches like the other text. |
 | `lowPowerAlert` | `20` | Percentage below which the low power alert shows. `false` turns it off. |
 | `lowPowerBlink` | `true` | Blink the bar while power is low. |
-| `barAnimation` | `true` | A light glint runs along the bar: left to right while charging, right to left while discharging. |
 | `generatorControl` | `false` | Turn on generator control (see below). |
 | `generatorSide` | `'back'` | Side of the computer the redstone signal comes out of. |
 | `generatorOnBelow`, `generatorOffAbove` | `20`, `90` | Start the generators below the first percentage, stop them above the second. |
@@ -94,7 +95,7 @@ To update, run the `wget` line above again. Your `config.lua` is kept; the curre
 | `showAverages` | `true` | GregTech's In/Out/Net averages (5 s, 5 min, 1 hour) on the screen. |
 | `showHistory` | `true` | Show the history graph on the screen. |
 | `historyMinutes` | `30` | How much time the screen's history graph covers. |
-| `showPassiveLoss` | `true` | Show the LSC's passive loss on the screen. The Net column includes it either way. |
+| `showPassiveLoss` | `true` | Show the LSC's passive loss on the screen, under the Out column. The Net column includes it either way. |
 | `lscAddress` | `false` | Only needed if the computer sees more than one GregTech machine: the start of the LSC's `gt_machine` address. |
 | `sleep` | `1` | Seconds between updates. |
 

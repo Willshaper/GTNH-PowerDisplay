@@ -17,7 +17,6 @@ local COLOR = {
   bad = 0xFF5555,
   warn = 0xFFFF55,
   bar = 0x55AAFF,
-  barGlint = 0xDDEEFF,
   barEmpty = 0x333333,
   graph = 0x55FFFF,
   background = 0x000000,
@@ -31,7 +30,8 @@ local touched = {} -- rows written during the current frame
 local fg, bg -- current GPU colours, to skip needless calls
 local config
 local barRow -- screen row of the bar's first line (nil when not drawn)
-local lastData, lastView -- what the bar shows, for animation frames between updates
+local netRow -- screen row of the Net EU/t line
+local lastData, lastView -- for animation frames between updates
 
 -- History graph: one sample per bucket, averaged
 local history = {} -- list of fractions 0..1, oldest first
@@ -220,11 +220,7 @@ local function blinkPhase(now)
   return math.floor(now * 2) % 2 == 0
 end
 
-local GLINT_WIDTH = 3 -- cells
-local GLINT_SPEED = 12 -- cells per second
-
--- The bar, two rows tall. While charging a light glint runs left to right across the
--- filled part, while discharging right to left.
+-- The bar, two rows tall
 local function drawBar(now)
   local size = width - 2
   local barColor = COLOR.bar
@@ -234,63 +230,74 @@ local function drawBar(now)
   local cells = lastData.percent * size
   local full = math.floor(cells)
   local part = math.floor((cells - full) * 8)
-  local ending = ''
-  local used = full
+  local text = string.rep('█', full)
   if full < size and part > 0 then
-    ending = EIGHTHS[part]
-    used = used + 1
+    text = text .. EIGHTHS[part]
+    full = full + 1
   end
-  ending = ending .. string.rep(' ', size - used)
+  text = text .. string.rep(' ', size - full)
 
-  -- Glint cells [g, g + GLINT_WIDTH) within the full cells [0, full)
-  local g
-  local direction = lastView.direction or 0
-  if config.barAnimation and direction ~= 0 and full >= GLINT_WIDTH + 1 then
-    local cycle = full + GLINT_WIDTH - 1
-    local step = math.floor(now * GLINT_SPEED) % cycle
-    if direction > 0 then
-      g = step - GLINT_WIDTH + 1
-    else
-      g = full - 1 - step
-    end
-  end
-
-  local segments = {{' ', COLOR.text}}
-  if g then
-    local from, to = math.max(0, g), math.min(full, g + GLINT_WIDTH)
-    table.insert(segments, {string.rep('█', from), barColor, COLOR.barEmpty})
-    table.insert(segments, {string.rep('█', to - from), COLOR.barGlint, COLOR.barEmpty})
-    table.insert(segments, {string.rep('█', full - to) .. ending, barColor, COLOR.barEmpty})
-  else
-    table.insert(segments, {string.rep('█', full) .. ending, barColor, COLOR.barEmpty})
-  end
-  -- Both lines are the same, so each segment is drawn on both before changing colour
+  -- Both lines are the same, so each is drawn right after the other
   touched[barRow], touched[barRow + 1] = true, true
-  local signature = {}
-  for _, s in ipairs(segments) do
-    table.insert(signature, s[1] .. '\0' .. s[2])
-  end
-  local key = table.concat(signature, '\1') .. '\1' .. barColor
+  local key = text .. '\0' .. barColor
   if drawn[barRow] == key then
     return
   end
   drawn[barRow], drawn[barRow + 1] = key, key
-  local x = 1
-  for _, s in ipairs(segments) do
-    if s[1] ~= '' then
-      setColors(s[2], s[3] or COLOR.background)
-      gpu.set(x, barRow, s[1])
-      gpu.set(x, barRow + 1, s[1])
-      x = x + len(s[1])
-    end
-  end
+  setColors(COLOR.text, COLOR.background)
+  gpu.set(1, barRow, ' ')
+  gpu.set(1, barRow + 1, ' ')
+  setColors(barColor, COLOR.barEmpty)
+  gpu.set(2, barRow, text)
+  gpu.set(2, barRow + 1, text)
 end
 
--- Called several times a second between updates: moves the glint and blinks the bar.
--- Only the bar rows are redrawn, and only when they changed.
+-- Net EU/t over the configured window, animated arrows, and time to full or empty
+local function drawNet(now)
+  local data, view = lastData, lastView
+  local rateColor = COLOR.dim
+  if view.direction == 1 then
+    rateColor = COLOR.good
+  elseif view.direction == -1 then
+    rateColor = COLOR.bad
+  end
+  local timeText
+  if not config.showTimeTo then
+    timeText = ''
+  elseif data.percent >= 0.9995 and (view.eut or 0) >= 0 then
+    timeText = 'Full'
+  elseif data.percent <= 0.0005 and (view.eut or 0) <= 0 then
+    timeText = 'Empty'
+  elseif view.timeTo then
+    timeText = (view.timeToWhat == 'full' and 'Full in ' or 'Empty in ') .. format.duration(view.timeTo)
+  elseif view.eut then
+    timeText = 'Steady'
+  else
+    timeText = 'Measuring...'
+  end
+  -- Arrows after the number while charging, before it while discharging. Both sides
+  -- keep room for three, so the number doesn't move.
+  local before, after = '', ''
+  if config.showArrows then
+    local arrows = format.arrows(view.direction, now)
+    before = pad(view.direction < 0 and arrows or '', 3, true) .. ' '
+    after = ' ' .. pad(view.direction > 0 and arrows or '', 3)
+  end
+  split(netRow, {
+    {' Net  ', COLOR.dim},
+    {before, rateColor},
+    {format.rate(view.eut, config.metric, 2) .. ' EU/t', rateColor},
+    {after, rateColor},
+    {string.format('  (last %ss)', config.euTSeconds), COLOR.faint},
+  }, {{timeText .. ' ', COLOR.text}})
+end
+
+-- Called several times a second between updates: animates the arrows and blinks the
+-- bar. Only those rows are redrawn, and only when they changed.
 function screen.animate(now)
   if gpu and barRow and lastData then
     drawBar(now)
+    drawNet(now)
   end
 end
 
@@ -383,38 +390,14 @@ function screen.update(data, view)
   drawBar(now)
   y = y + 3
 
-  -- Net EU/t over the configured window, and time to full or empty
-  local rateColor = COLOR.dim
-  if view.eut and view.eut > 0.5 then
-    rateColor = COLOR.good
-  elseif view.eut and view.eut < -0.5 then
-    rateColor = COLOR.bad
-  end
-  local timeText
-  if not config.showTimeTo then
-    timeText = ''
-  elseif data.percent >= 0.9995 and (view.eut or 0) >= 0 then
-    timeText = 'Full'
-  elseif data.percent <= 0.0005 and (view.eut or 0) <= 0 then
-    timeText = 'Empty'
-  elseif view.timeTo then
-    timeText = (view.timeToWhat == 'full' and 'Full in ' or 'Empty in ') .. format.duration(view.timeTo)
-  elseif view.eut then
-    timeText = 'Steady'
-  else
-    timeText = 'Measuring...'
-  end
-  split(y, {
-    {' Net  ', COLOR.dim},
-    {format.rate(view.eut, metric, 2) .. ' EU/t', rateColor},
-    {string.format('  (last %ss)', config.euTSeconds), COLOR.faint},
-  }, {{timeText .. ' ', COLOR.text}})
+  netRow = y
+  drawNet(now)
   y = y + 2
 
   -- GT's own averages, when there is room for them
   local footer = height
   if config.showAverages and height >= 20 then
-    local c1, c2 = 12, 14
+    local c1, c2 = 14, 14
     row(y, {{pad('', c1) .. pad('In', c2, true) .. pad('Out', c2, true) .. pad('Net', c2, true), COLOR.faint}})
     local windows = {
       {' 5 s', data.avgIn, data.avgOut},
@@ -437,17 +420,16 @@ function screen.update(data, view)
     end
     y = y + 5
     if config.showPassiveLoss then
-      -- An extra outflow on top of Out, so it sits in that column
+      -- An outflow on top of Out (Net includes it), so it sits in that column
       row(y - 1, {
-        {pad(' Passive', c1), COLOR.dim},
+        {pad(' Passive Loss', c1), COLOR.dim},
         {pad('', c2), COLOR.text},
         {pad(format.eu(data.passiveLoss, metric, 2), c2, true), COLOR.text},
-        {'  EU/t, included in Net', COLOR.faint},
       })
       y = y + 1
     end
   elseif config.showPassiveLoss then
-    row(y, {{' Passive loss  ', COLOR.dim}, {format.eu(data.passiveLoss, metric, 2), COLOR.text}, {' EU/t, included in Net', COLOR.faint}})
+    row(y, {{' Passive Loss  ', COLOR.dim}, {format.eu(data.passiveLoss, metric, 2) .. ' EU/t', COLOR.text}})
     y = y + 2
   end
 

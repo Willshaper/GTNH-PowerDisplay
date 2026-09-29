@@ -50,10 +50,10 @@ return {
   -- HUD values
   showPercent = true,   -- charge % left of the bar
   showCurrentEU = true,
-  showRate = true,      -- arrows next to the stored EU: < slowly draining ... >>> charging fast
   showMaxEU = true,
   showEUt = true,       -- net EU/t in the middle of the bar
   euTSeconds = 5,       -- EU/t is the average over this many seconds (HUD and screen)
+  showArrows = true,    -- animated > >> >>> after the EU/t while charging, <<< before it while discharging
 
   -- Maintenance status: "Has Problems!" on the HUD, status and warning on the screen
   showMaintenance = true,
@@ -62,8 +62,6 @@ return {
   wirelessMode = false,
   wirelessMax = 1e15,   -- the wireless network has no maximum; this is what counts as 100%
 
-  -- How much the fill % must change per update for one more arrow
-  rateThreshold = 0.003,
   -- Numbers as 4.4G (true) or 4.42e9 (false)
   metric = true,
 
@@ -81,8 +79,9 @@ return {
   -- HUD colours (see the list at the top)
   primaryColor = colors.electricBlue,
   secondaryColor = colors.darkSlateBlue,
-  textColor = colors.black,
-  euTColor = false,     -- colour of the EU/t text; false uses textColor
+  textColor = colors.black,       -- text over the filled part of the bar
+  textColorEmpty = 0xE6E6E6,     -- text over the empty part of the bar
+  euTColor = false,     -- one fixed colour for the EU/t text and arrows; false switches like the rest
   issueColor = colors.red,
   borderColor = colors.darkGray,
 
@@ -90,9 +89,6 @@ return {
   lowPowerAlert = 20,
   lowPowerBlink = true,
 
-  -- A light glint runs along the bar while charging (left to right) or discharging
-  -- (right to left), on the HUD and the screen
-  barAnimation = true,
 
   -- Generator control (needs a redstone card in the computer)
   generatorControl = false,
@@ -110,7 +106,7 @@ return {
   -- Screen: a graph of the charge over the last historyMinutes minutes
   showHistory = true,
   historyMinutes = 30,
-  -- Screen: show the LSC's passive loss under the averages (Net always includes it)
+  -- Screen: show the LSC's passive loss under the Out column (Net always includes it)
   showPassiveLoss = true,
 
   -- Which LSC to read if the computer sees more than one GregTech machine.

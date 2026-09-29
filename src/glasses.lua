@@ -12,10 +12,7 @@ local l, h, b1, b2, y -- bar geometry, as upstream
 local mirrored = false
 local screenWidth -- in GUI pixels
 local lastData, lastView -- for animation frames between updates
-
-local GLINT_WIDTH = 10 -- pixels along the bar
-local GLINT_SPEED = 40 -- pixels per second
-local GLINT_ALPHA = 0.45
+local eutText = '' -- the EU/t label's text, which the arrows sit next to
 
 -- Minecraft font widths in pixels (glyph + 1 spacing); everything else is 6
 local CHAR_WIDTH = {
@@ -61,12 +58,16 @@ end
 
 -- Text labels. `x` gives the left edge of the text in the left-side layout; on the
 -- right side the text's whole span is mirrored, so it keeps its place against the bar.
+-- `onBar` labels sit on the bar and change colour with what is behind them.
 local labels = {}
 
 local function defineLabels()
   local fs = config.fontSize
   local small = fs / 1.3 / 3
   local textY = y - b1 - h/2 - fs
+  local function eutLeft()
+    return 3*h + l/2 - textWidth(eutText, small)/2
+  end
   labels = {
     percent = {scale = fs / 3, y = y - b1 - h/1.8 - fs, x = function(text)
       -- Right-aligned against the start of the bar, as upstream
@@ -75,10 +76,19 @@ local function defineLabels()
       end
       return b2 + 2*h - 2*fs*(#text - 1)
     end},
-    curr = {scale = small, y = textY, x = function() return b2 + 3.25*h + 1 end},
-    max = {scale = small, y = textY, x = function(text) return 2.25*h + l - 1.5*fs*(#text - 1) end},
+    curr = {scale = small, y = textY, onBar = true, x = function() return b2 + 3.25*h + 1 end},
+    max = {scale = small, y = textY, onBar = true, x = function(text) return 2.25*h + l - 1.5*fs*(#text - 1) end},
     -- Centred on the middle of the slanted bar
-    eut = {scale = small, y = textY, x = function(text) return 3*h + l/2 - textWidth(text, small)/2 end},
+    eut = {scale = small, y = textY, onBar = true, eut = true, x = eutLeft},
+    -- After the EU/t while charging, before it while discharging; the number itself
+    -- stays put while the arrows grow
+    arrows = {scale = small, y = textY, onBar = true, eut = true, x = function(text)
+      local gap = textWidth(' ', small)
+      if (lastView and lastView.direction or 0) > 0 then
+        return eutLeft() + textWidth(eutText, small) + gap
+      end
+      return eutLeft() - gap - textWidth(text, small)
+    end},
     alert = {scale = fs / 3, y = y - b1 - b2 - h - 3*fs, x = function() return b2 end},
   }
 end
@@ -90,6 +100,17 @@ local function labelX(name, text)
     return screenWidth - x - textWidth(text, label.scale)
   end
   return x
+end
+
+-- Dark text over the filled part of the bar, light text over the empty part
+local function labelColor(name, text)
+  local label = labels[name]
+  if label.eut and config.euTColor then
+    return config.euTColor
+  end
+  local fillEnd = b2 + 2.75*h + l * (lastData and lastData.percent or 0) -- at the text's height
+  local centre = label.x(text) + textWidth(text, label.scale) / 2
+  return centre < fillEnd and config.textColor or config.textColorEmpty
 end
 
 local function text(glasses, name, color)
@@ -114,14 +135,19 @@ local function changed(terminal, key, value)
 end
 
 local function setLabel(terminal, name, value)
-  if not changed(terminal, name, value) then
-    return
-  end
   local widget = terminal.widgets[name]
-  widget.setText(value)
+  if changed(terminal, name, value) then
+    widget.setText(value)
+  end
   local x = labelX(name, value)
   if changed(terminal, name .. 'X', x) then
     widget.setPosition(x, labels[name].y)
+  end
+  if labels[name].onBar then
+    local color = labelColor(name, value)
+    if changed(terminal, name .. 'Color', color) then
+      widget.setColor(RGB(color))
+    end
   end
 end
 
@@ -136,14 +162,11 @@ local function draw(glasses)
 
   -- Energy bar and values
   w.energyBar = quad(glasses, {b2+3.25*h, y-b1}, {b2+3.25*h, y-b1}, {b2+2.25*h, y-b1-h}, {b2+2.25*h, y-b1-h}, config.primaryColor)
-  -- Drawn after the bar and before the text, so it runs over the bar and under the numbers
-  w.glint = quad(glasses, {0, y-b1}, {0, y-b1}, {0, y-b1-h}, {0, y-b1-h}, 0xFFFFFF)
-  w.glint.setAlpha(GLINT_ALPHA)
-  w.glint.setVisible(false)
   w.percent = text(glasses, 'percent', config.primaryColor)
   w.curr = text(glasses, 'curr', config.textColor)
   w.max = text(glasses, 'max', config.textColor)
-  w.eut = text(glasses, 'eut', config.euTColor)
+  w.eut = text(glasses, 'eut', config.textColor)
+  w.arrows = text(glasses, 'arrows', config.textColor)
   w.alert = text(glasses, 'alert', config.issueColor)
   return w
 end
@@ -151,6 +174,7 @@ end
 function hud.start(cfg)
   config = cfg
   terminals = {}
+  lastData, lastView, eutText = nil, nil, ''
   l, h = config.length, config.height
   b1, b2 = config.borderBottom, config.borderTop
   y = config.resolution[2] / config.GUIscale
@@ -172,20 +196,20 @@ local function blinkPhase(now)
   return math.floor(now * 2) % 2 == 0
 end
 
--- The glint's span along the filled part, or nil when it is hidden
-local function glintSpan(now, fill)
-  local direction = lastView.direction or 0
-  if not config.barAnimation or direction == 0 or fill < GLINT_WIDTH * 2 then
-    return nil
+-- ">", ">>", ">>>" while charging, "<" ... while discharging; mirrored on the right side
+local function arrowsText(now)
+  if not config.showArrows or eutText == '' then
+    return ''
   end
-  -- Moves in whole pixels, so an unchanged position sends nothing
-  local cycle = fill + GLINT_WIDTH
-  local step = math.floor(now * GLINT_SPEED) % math.floor(cycle)
-  local head = direction > 0 and step or (cycle - step)
-  return math.max(0, head - GLINT_WIDTH), math.min(fill, head)
+  local arrows = format.arrows(lastView.direction, now)
+  if mirrored then
+    arrows = arrows:gsub('.', {['<'] = '>', ['>'] = '<'})
+  end
+  return arrows
 end
 
--- Called several times a second between updates: moves the glint and blinks the bar
+-- Called several times a second between updates: animates the arrows and blinks the
+-- bar. Only changes are sent.
 function hud.animate(now)
   if not lastData then
     return
@@ -194,39 +218,22 @@ function hud.animate(now)
   if lastView.lowPower and (not config.lowPowerBlink or blinkPhase(now)) then
     barColor = config.issueColor
   end
-  local fill = l * lastData.percent
-  local from, to = glintSpan(now, fill)
+  local arrows = arrowsText(now)
   for _, t in ipairs(terminals) do
-    local w = t.widgets
     if changed(t, 'barColor', barColor) then
-      w.energyBar.setColor(RGB(barColor))
+      t.widgets.energyBar.setColor(RGB(barColor))
     end
-    local visible = from ~= nil and to > from
-    if changed(t, 'glintVisible', visible) then
-      w.glint.setVisible(visible)
-    end
-    if visible and changed(t, 'glint', from .. ',' .. to) then
-      -- Same slant as the bar: the top edge sits h further in than the bottom edge
-      local x = b2 + 3.25*h
-      setVertex(w.glint, 1, x + from, y-b1)
-      setVertex(w.glint, 2, x + to, y-b1)
-      setVertex(w.glint, 3, x + to - h, y-b1-h)
-      setVertex(w.glint, 4, x + from - h, y-b1-h)
-    end
+    setLabel(t, 'arrows', arrows)
   end
 end
 
--- data: from lsc.read; view: {rate = arrows or '', eut, direction, lowPower}
+-- data: from lsc.read; view: {eut, direction, lowPower}
 function hud.update(data, view)
   lastData, lastView = data, view
 
-  local curr = config.showCurrentEU and format.eu(data.stored, config.metric) or ''
-  if view.rate ~= '' then
-    curr = curr .. ' ' .. view.rate
-  end
-  local eut = ''
+  eutText = ''
   if config.showEUt and view.eut then
-    eut = format.rate(view.eut, config.metric) .. ' EU/t'
+    eutText = format.rate(view.eut, config.metric) .. ' EU/t'
   end
 
   local alerts = {}
@@ -250,9 +257,9 @@ function hud.update(data, view)
     if changed(t, 'percentColor', percentColor) then
       w.percent.setColor(RGB(percentColor))
     end
-    setLabel(t, 'curr', curr)
+    setLabel(t, 'curr', config.showCurrentEU and format.eu(data.stored, config.metric) or '')
     setLabel(t, 'max', config.showMaxEU and format.eu(data.capacity, config.metric) or '')
-    setLabel(t, 'eut', eut)
+    setLabel(t, 'eut', eutText)
     setLabel(t, 'alert', table.concat(alerts, '  '))
   end
 end

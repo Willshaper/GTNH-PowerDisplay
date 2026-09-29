@@ -17,7 +17,7 @@ local screen = require('src.screen')
 local generators = require('src.generators')
 
 local RETRY_SECONDS = 5
-local FRAME_SECONDS = 0.1 -- animation frames between updates
+local FRAME_SECONDS = 0.1 -- animation frames between updates (arrows, blinking)
 
 -- config.lua is found the same way require would find it, and read fresh every start
 local configPath = package.searchpath('config', package.path)
@@ -37,7 +37,7 @@ local function stopRequested(char)
 end
 
 -- Waits up to `seconds`, returning true as soon as C is pressed. With `frame`,
--- calls frame(uptime) every FRAME_SECONDS meanwhile (bar animation and blinking).
+-- calls frame(uptime) every FRAME_SECONDS meanwhile (arrows and blinking).
 -- Ctrl+Alt+C raises "interrupted" from event.pull, which ends the program.
 local function wait(seconds, frame)
   local deadline = computer.uptime() + seconds
@@ -55,17 +55,6 @@ local function wait(seconds, frame)
     end
   until computer.uptime() >= deadline
   return false
-end
-
--- Upstream's rate arrows: how fast the fill % changed since the last update
-local function arrows(percent, last, threshold)
-  if percent > last + 2*threshold then return '>>>'
-  elseif percent > last + threshold then return '>>'
-  elseif percent >= last then return '>'
-  elseif percent > last - threshold then return '<'
-  elseif percent > last - 2*threshold then return '<<'
-  end
-  return '<<<'
 end
 
 -- Shows a message on the screen, or prints it once if there is no screen
@@ -119,7 +108,6 @@ end
 -- Reads and draws until C is pressed (returns) or something fails (raises an error)
 local function run(machine)
   local average = lsc.newAverage(config.euTSeconds)
-  local last = nil
   while true do
     local data = lsc.read(machine, config)
     local now = computer.uptime()
@@ -135,11 +123,6 @@ local function run(machine)
     end
     view.timeTo, view.timeToWhat = lsc.timeTo(data, view.eut)
     view.lowPower = config.lowPowerAlert ~= false and data.percent * 100 < config.lowPowerAlert
-    view.rate = ''
-    if config.showRate then
-      view.rate = arrows(data.percent, last or data.percent, config.rateThreshold)
-      last = data.percent
-    end
 
     generators.update(data.percent)
     view.generators = generators.isRunning()

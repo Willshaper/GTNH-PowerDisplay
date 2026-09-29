@@ -13,7 +13,7 @@ local DEFAULTS = {
 
   showPercent = true,
   showCurrentEU = true,
-  showRate = true,
+  showArrows = true,
   showMaxEU = true,
   showMaintenance = true,
   showTimeTo = true,
@@ -24,7 +24,6 @@ local DEFAULTS = {
   wirelessMode = false,
   wirelessMax = 1e15,
 
-  rateThreshold = 0.003,
   metric = true,
 
   height = 12,
@@ -39,13 +38,13 @@ local DEFAULTS = {
   primaryColor = 0x00A6FF,
   secondaryColor = 0x303850,
   textColor = 0x000000,
-  euTColor = false, -- false: same as textColor
+  textColorEmpty = 0xE6E6E6,
+  euTColor = false, -- false: textColor or textColorEmpty, whichever part of the bar it is over
   issueColor = 0xFF0000,
   borderColor = 0x181828,
 
   lowPowerAlert = 20,
   lowPowerBlink = true,
-  barAnimation = true,
   showPassiveLoss = true,
 
   generatorControl = false,
@@ -59,6 +58,14 @@ local DEFAULTS = {
   lscAddress = false,
 
   sleep = 1,
+}
+
+-- Settings from older versions: the new name, or false when it no longer does anything.
+-- They are accepted so an old config.lua keeps working.
+local RENAMED = {
+  showRate = 'showArrows',
+  rateThreshold = false,
+  barAnimation = false,
 }
 
 local SIDES = {
@@ -126,13 +133,12 @@ local function check(config)
   end
   number(config, 'GUIscale', 1, 10)
 
-  for _, key in ipairs({'showPercent', 'showMaintenance', 'showTimeTo', 'showAverages', 'showCurrentEU', 'showRate', 'showMaxEU', 'showEUt', 'wirelessMode', 'metric', 'lowPowerBlink',
-      'barAnimation', 'showPassiveLoss', 'showHistory', 'generatorControl'}) do
+  for _, key in ipairs({'showPercent', 'showMaintenance', 'showTimeTo', 'showAverages', 'showCurrentEU', 'showArrows', 'showMaxEU', 'showEUt', 'wirelessMode', 'metric', 'lowPowerBlink',
+      'showPassiveLoss', 'showHistory', 'generatorControl'}) do
     boolean(config, key)
   end
   number(config, 'euTSeconds', 1)
   number(config, 'wirelessMax', 1)
-  number(config, 'rateThreshold', 0)
 
   for _, key in ipairs({'height', 'length', 'fontSize'}) do
     number(config, key, 1)
@@ -142,7 +148,7 @@ local function check(config)
   number(config, 'shapeAlpha', 0, 1)
   number(config, 'textAlpha', 0, 1)
 
-  for _, key in ipairs({'primaryColor', 'secondaryColor', 'textColor', 'issueColor', 'borderColor'}) do
+  for _, key in ipairs({'primaryColor', 'secondaryColor', 'textColor', 'textColorEmpty', 'issueColor', 'borderColor'}) do
     color(config, key)
   end
   color(config, 'euTColor', true)
@@ -194,17 +200,21 @@ function options.load(path)
     config[key] = value
   end
   for key, value in pairs(loaded) do
-    if DEFAULTS[key] == nil then
+    local renamed = RENAMED[key]
+    if renamed ~= nil then
+      -- An older setting: use it for its new name unless that is set too
+      if renamed and loaded[renamed] == nil then
+        config[renamed] = value
+      end
+    elseif DEFAULTS[key] == nil then
       problem(string.format('%s is not a setting (check the spelling)', tostring(key)))
+    else
+      config[key] = value
     end
-    config[key] = value
   end
   check(config)
   if #problems > 0 then
     return nil, problems
-  end
-  if config.euTColor == false then
-    config.euTColor = config.textColor
   end
   if config.lscAddress == false then
     config.lscAddress = nil

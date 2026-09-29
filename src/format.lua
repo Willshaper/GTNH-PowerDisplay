@@ -69,6 +69,18 @@ function format.duration(seconds)
   return string.format('%dy', seconds // 31536000)
 end
 
+-- Animated direction arrows: ">", ">>", ">>>", ">", ... while charging (direction 1),
+-- "<" ... while discharging (-1), nothing when steady (0)
+local ARROW_STEP = 0.4 -- seconds per step
+
+function format.arrows(direction, now)
+  if direction == nil or direction == 0 then
+    return ''
+  end
+  local count = math.floor(now / ARROW_STEP) % 3 + 1
+  return string.rep(direction > 0 and '>' or '<', count)
+end
+
 function format.percent(fraction)
   if fraction > 0.999 then
     return '100%'
