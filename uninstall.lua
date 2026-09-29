@@ -6,6 +6,7 @@ local component = require('component')
 local dir = shell.getWorkingDirectory()
 local files = {
   'hud.lua',
+  'viewer.lua',
   'setup.lua',
   'uninstall.lua',
   'config.default.lua',
@@ -15,6 +16,7 @@ local files = {
   'src/glasses.lua',
   'src/screen.lua',
   'src/generators.lua',
+  'src/link.lua',
 }
 
 local function ask(question)
@@ -46,7 +48,7 @@ local file = io.open(shrc, 'r')
 if file then
   local kept, removed = {}, false
   for line in file:lines() do
-    if line:find('&& hud', 1, true) then
+    if line:find('&& hud', 1, true) or line:find('&& viewer', 1, true) then
       removed = true
     else
       table.insert(kept, line)

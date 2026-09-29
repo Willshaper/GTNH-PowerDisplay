@@ -226,10 +226,17 @@ function screen.message(title, lines, color)
   row(3, {{' ' .. title, color or COLOR.warn}})
   local y = 4
   for _, line in ipairs(lines or {}) do
-    -- Wrap long lines
+    -- Wrap long lines, between words where possible
     while len(line) > width - 2 and y < height do
-      row(y, {{' ' .. unicode.sub(line, 1, width - 2), COLOR.text}})
-      line = unicode.sub(line, width - 1)
+      local cut = width - 2
+      for i = width - 2, math.floor(width / 2), -1 do
+        if unicode.sub(line, i + 1, i + 1) == ' ' then
+          cut = i
+          break
+        end
+      end
+      row(y, {{' ' .. unicode.sub(line, 1, cut), COLOR.text}})
+      line = unicode.sub(line, cut + 1):gsub('^ +', '')
       y = y + 1
     end
     if y <= height then
@@ -385,7 +392,7 @@ end
 
 -- data: from lsc.read
 -- view: {eut, direction (1, -1 or 0), timeTo, timeToWhat, timeRate, lowPower, generators (true/false/nil),
---        generatorProblem, hudNote}
+--        generatorProblem, generatorHint, notes (footer), remote (shown by the viewer)}
 function screen.update(data, view)
   if not gpu then
     return
@@ -405,7 +412,11 @@ function screen.update(data, view)
       status = {' Maintenance needed ', COLOR.bad}
     end
   end
-  split(y, {{' Power Display', COLOR.text}, {config.wirelessMode and '  (wireless)' or '', COLOR.dim}}, {status})
+  local title = ' Power Display'
+  if view.remote then
+    title = title .. ' (linked card)'
+  end
+  split(y, {{title, COLOR.text}, {config.wirelessMode and '  (wireless)' or '', COLOR.dim}}, {status})
   y = y + 2
 
   barRow = y
@@ -517,8 +528,11 @@ function screen.update(data, view)
   if #alerts > 0 then
     row(footer, alerts)
   else
-    local note = view.hudNote and ('  ' .. view.hudNote .. '.') or ''
-    row(footer, {{string.format(' Updates every %ss.%s  Press C to stop.', config.sleep, note), COLOR.faint}})
+    local text = ' Press C to stop.  Updates every ' .. config.sleep .. 's.'
+    for _, note in ipairs(view.notes or {}) do
+      text = text .. '  ' .. note .. '.'
+    end
+    row(footer, {{text, COLOR.faint}})
   end
   endFrame()
 end

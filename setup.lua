@@ -13,6 +13,7 @@ local dir = shell.getWorkingDirectory()
 
 local scripts = {
   'hud.lua',
+  'viewer.lua',
   'setup.lua',
   'uninstall.lua',
   'src/format.lua',
@@ -21,6 +22,7 @@ local scripts = {
   'src/glasses.lua',
   'src/screen.lua',
   'src/generators.lua',
+  'src/link.lua',
 }
 
 -- GitHub caches each file on a branch for up to 5 minutes, so right after an update
@@ -127,17 +129,23 @@ local function autostartEnabled()
   end
   local content = file:read('*a')
   file:close()
-  return content:find('&& hud', 1, true) ~= nil
+  return content:find('&& hud', 1, true) ~= nil or content:find('&& viewer', 1, true) ~= nil
+end
+
+-- A computer with a linked card but no LSC adapter is a viewer
+local program, name = 'hud', 'Power Display'
+if component.isAvailable('tunnel') and not component.isAvailable('gt_machine') then
+  program, name = 'viewer', 'the viewer'
 end
 
 print()
 if autostartEnabled() then
   print('Auto-start is already on (' .. shrc .. ').')
-elseif ask('Start Power Display automatically when the computer boots?') then
+elseif ask('Start ' .. name .. ' automatically when the computer boots?') then
   local file = io.open(shrc, 'a')
-  file:write(string.format('cd "%s" && hud\n', dir))
+  file:write(string.format('cd "%s" && %s\n', dir, program))
   file:close()
-  print('Auto-start on. Delete the hud line in ' .. shrc .. ' to turn it off.')
+  print('Auto-start on. Delete the ' .. program .. ' line in ' .. shrc .. ' to turn it off.')
 end
 
 -- The computer's redstone card (a Redstone I/O block, used for generator control,
@@ -165,4 +173,4 @@ end
 
 print()
 print('Edit settings with: edit config.lua')
-print('Start with: hud    (stop with C)')
+print('Start with: ' .. program .. '    (stop with C)')

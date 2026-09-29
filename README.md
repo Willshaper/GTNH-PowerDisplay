@@ -103,6 +103,7 @@ To update, run the `wget` line above again. Your `config.lua` is kept; the curre
 | `showHistory` | `true` | Show the history graph on the screen. |
 | `historyMinutes` | `30` | How much time the screen's history graph covers. |
 | `showPassiveLoss` | `true` | Show the LSC's passive loss on the screen, under the Out column. The Net column includes it either way. |
+| `linkedCard` | `false` | Send the display through the linked card(s) in this computer, for `viewer` on another computer (see below). |
 | `lscAddress` | `false` | Only needed if the computer sees more than one GregTech machine: the start of the LSC's `gt_machine` address. |
 | `sleep` | `1` | Seconds between updates. |
 
@@ -127,6 +128,21 @@ A computer that runs out of power switches off and stays off. To have it come ba
 
 Each pulse turns the computer on if it is off; a running computer ignores it. Power Display then starts with it.
 
+## Showing it on another computer (linked card)
+
+A second computer anywhere, even in another dimension, can show the same monitor and HUD, through a pair of linked cards.
+
+1. Craft a pair of linked cards. Put one in the Power Display computer and set `linkedCard = true` in its `config.lua`.
+2. Build a second computer with a screen and graphics card (and a glasses terminal for the HUD there), and put the other linked card in it. It doesn't need an adapter or an LSC.
+3. Install Power Display on it the same way. The installer sees the linked card and offers to start the viewer on boot.
+4. Run `viewer` there.
+
+The viewer uses its own `config.lua` for colours, sizes and what to show. The values (EU/t, time to full or empty, generator state) come from the Power Display computer. If nothing arrives for a while, the viewer says so.
+
+A tier 3 computer case has three card slots. With a graphics card, internet card and redstone card, the Power Display computer is full; the internet card is only needed to install and update, so it can make room for the linked card.
+
+Each linked card only talks to its pair, so the Power Display computer sends to every linked card it has: one pair per viewer.
+
 ## Multiplayer
 
 Every glasses terminal connected to the computer shows the HUD, so several players can share one computer. They all get the same settings.
@@ -135,6 +151,7 @@ Every glasses terminal connected to the computer shows the HUD, so several playe
 
     ls                       list the files
     edit config.lua          change the settings
+    viewer                   show another Power Display computer's display (linked card)
     uninstall                remove Power Display (asks before removing config.lua)
     hud 2>/errors.log        save a long error message, then: edit /errors.log
 

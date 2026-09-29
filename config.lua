@@ -127,6 +127,10 @@ return {
   -- false finds it automatically; otherwise the start of its gt_machine address, e.g. 'e190015a'
   lscAddress = false,
 
+  -- Send the display through the linked card(s) in this computer, to show it on another
+  -- computer's screen and glasses: run 'viewer' on that computer
+  linkedCard = false,
+
   -- Seconds between updates
   sleep = 1,
 }

@@ -61,6 +61,7 @@ local DEFAULTS = {
   showHistory = true,
   historyMinutes = 30,
   lscAddress = false,
+  linkedCard = false,
 
   sleep = 1,
 }
@@ -129,7 +130,7 @@ local function check(config)
   number(config, 'GUIscale', 1, 10)
 
   for _, key in ipairs({'showPercent', 'showMaintenance', 'showTimeToFullOrEmpty', 'showAverages', 'showCurrentEU', 'showArrows', 'showMaxEU', 'showEUt', 'wirelessMode', 'metric', 'lowPowerBlink',
-      'showPassiveLoss', 'showHistory', 'generatorControl'}) do
+      'showPassiveLoss', 'showHistory', 'generatorControl', 'linkedCard'}) do
     boolean(config, key)
   end
   number(config, 'euTAverage', 1)

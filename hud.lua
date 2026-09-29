@@ -6,7 +6,7 @@ local shell = require('shell')
 
 -- OpenOS keeps loaded modules until reboot; forget ours so an update takes effect
 -- and nothing is left over from a previous run
-for _, name in ipairs({'src.format', 'src.options', 'src.lsc', 'src.glasses', 'src.screen', 'src.generators'}) do
+for _, name in ipairs({'src.format', 'src.options', 'src.lsc', 'src.glasses', 'src.screen', 'src.generators', 'src.link'}) do
   package.loaded[name] = nil
 end
 
@@ -15,6 +15,7 @@ local lsc = require('src.lsc')
 local hud = require('src.glasses')
 local screen = require('src.screen')
 local generators = require('src.generators')
+local link = require('src.link')
 
 local RETRY_SECONDS = 5
 local FRAME_SECONDS = 0.1 -- animation frames between updates (arrows, blinking)
@@ -71,7 +72,7 @@ local function message(title, lines, color)
   end
 end
 
-local hudNote -- shown in the screen's footer, e.g. when no glasses terminal is connected
+local notes = {} -- shown in the screen's footer, e.g. when no glasses terminal is connected
 local generatorProblem, generatorHint -- why generator control can't run, shown on the screen
 
 -- Finds the LSC, waiting until it can be read. Returns the proxy, or nil if C was pressed.
@@ -94,6 +95,7 @@ local function waitForLSC()
       hint = 'Place an adapter touching the Lapotronic Supercapacitor controller, and connect it to this computer with cable.'
     end
     message('Waiting for the LSC...', {hint})
+    link.sendStatus('The Power Display computer is waiting for the LSC.', hint)
     if wait(RETRY_SECONDS) then
       return nil
     end
@@ -119,7 +121,7 @@ local function run(machine)
     average.add(now, data.stored)
     timeAverage.add(now, data.stored)
 
-    local view = {hudNote = hudNote, generatorProblem = generatorProblem, generatorHint = generatorHint}
+    local view = {notes = notes, generatorProblem = generatorProblem, generatorHint = generatorHint}
     view.eut = average.value()
     view.direction = 0
     if view.eut and view.eut >= 1 then
@@ -139,6 +141,7 @@ local function run(machine)
 
     generators.update(data.percent)
     view.generators = generators.isRunning()
+    link.send(data, view, config)
 
     if config.showHud then
       hud.update(data, view)
@@ -155,13 +158,19 @@ end
 
 local function main()
   if config.showHud and hud.start(config) == 0 then
-    hudNote = 'No glasses terminal found'
+    table.insert(notes, 'No glasses terminal found')
+  end
+  local linkProblem = link.start(config)
+  if linkProblem then
+    table.insert(notes, 'Linked card: ' .. linkProblem)
+  elseif link.active() then
+    table.insert(notes, 'Sending to the linked card')
   end
   if config.showScreen and not screen.start(config) then
     print('No screen or graphics card found; showing the HUD only.')
   end
-  if hudNote and not screen.active() then
-    print(hudNote .. '; the HUD is not shown.')
+  if #notes > 0 and not screen.active() then
+    print(table.concat(notes, '. ') .. '.')
   end
   generatorProblem, generatorHint = generators.start(config)
   if generatorProblem and not screen.active() then
@@ -186,6 +195,7 @@ local function main()
     generators.update(nil)
     hud.notice('Power Display error, retrying...')
     message('Something went wrong, retrying in ' .. RETRY_SECONDS .. 's', {tostring(err)}, 0xFF5555)
+    link.sendStatus('The Power Display computer had an error and is retrying.', tostring(err))
     if wait(RETRY_SECONDS) then
       return
     end
