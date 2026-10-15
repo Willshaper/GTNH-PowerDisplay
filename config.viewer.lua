@@ -1,7 +1,7 @@
--- Power Display viewer settings: how this computer shows the display it receives through
--- its linked card. The values (EU/t, time left, generators) come from the Power Display
--- computer. Press S in viewer to edit them: the changes are used as soon as you save
--- (Ctrl+S) and close the editor (Ctrl+W).
+-- Power Display viewer settings: how this computer shows the display it
+-- receives through its linked card. The values (EU/t, time left, generators)
+-- come from the Power Display computer. Press S in viewer to edit them: the
+-- changes are used as soon as you save (Ctrl+S) and close the editor (Ctrl+W).
 -- One setting per line. A setting you leave out uses its default.
 
 -- What the HUD on your AR glasses shows. Use any of these words, in any order:
@@ -22,30 +22,38 @@ hud = "Percent Stored EUt Arrows Max Maintenance"
 -- "" = no screen monitor.
 screen = "Percent Stored EUt Arrows Max Maintenance TimeLeft Averages PassiveLoss History"
 
-hudCorner = "left"         -- bottom corner for the HUD: "left" or "right" (mirrored)
-lowPower = 20              -- below this %, the bar turns red and "Low power!" shows (false = off)
+-- Bottom corner for the HUD: "left" or "right" (mirrored)
+hudCorner = "left"
+-- Below this %, the bar turns red and "Low power!" shows (false = off)
+lowPower = 20
 
--- Your Minecraft window, so the HUD lands in the corner
-windowSize = {1920, 1080}  -- your monitor's resolution (the game window's size when not fullscreen)
+-- Your Minecraft window, so the HUD lands in the corner: your monitor's
+-- resolution (the game window's size when not fullscreen)
+windowSize = {1920, 1080}
 fullscreen = true
 guiScale = 3               -- Video Settings > GUI Scale
 
--- Colours: a name from the list at the end of this file in quotes, or a number like 0xFF8800
-barColor = "electricBlue"         -- the filled part of the bar, and the percentage
+-- Colours: a name in quotes from the list at the end of this file, or a
+-- number like 0xFF8800
+barColor = "electricBlue"         -- the filled part of the bar, and the %
 barEmptyColor = "darkSlateBlue"   -- the empty part of the bar
 textOverFillColor = "black"       -- text over the filled part
 textOverEmptyColor = "offWhite"   -- text over the empty part
-alertColor = "red"                -- "Low power!", "Has Problems!" and the low power bar
+alertColor = "red"                -- "Low power!", "Has Problems!", low bar
 frameColor = "darkGray"           -- the frame around the bar
 timeLeftColor = "offWhite"        -- the time left next to the HUD bar
-euTColor = false                  -- one fixed colour for the EU/t and arrows (false = like other text)
+-- One fixed colour for the EU/t and arrows (false = like the other text)
+euTColor = false
 
 -- Advanced
 numberFormat = "metric"    -- "metric" = 4.4G, "scientific" = 4.42e9
-lowPowerFade = true        -- the low power HUD bar fades to alertColor and back (false = steady)
+-- The low power HUD bar fades to alertColor and back (false = steady red)
+lowPowerFade = true
 historyMinutes = 30        -- minutes the screen's History graph covers
-barTextStyle = "shadow"    -- HUD text on the bar: "shadow" = light with a dark shadow; "split" = dark over
-                           -- the fill, light over the rest, letter by letter (gaps possible with resource-pack fonts)
+-- Text on the HUD bar: "shadow" = light with a dark shadow; "split" = dark
+-- over the fill, light over the rest, letter by letter (gaps are possible
+-- with resource-pack fonts)
+barTextStyle = "shadow"
 hudHeight = 12             -- HUD size, in GUI pixels
 hudLength = 168
 hudBorderBottom = 2
@@ -57,6 +65,7 @@ hudTimeLeftFontSize = 3    -- the time left past the bar
 hudShapeOpacity = 0.9      -- 0 to 1
 hudTextOpacity = 1.0       -- 0 to 1
 
--- Colour names: red, orange, yellow, green, blue, indigo, violet, maroon, golden, lime,
--- olive, cyan, magenta, black, white, gray, lightGray, offWhite, darkGray, electricBlue,
--- dodgerBlue, steelBlue, midnightBlue, darkBlue, darkSlateGreen, darkSlateBlue
+-- Colour names: red, orange, yellow, green, blue, indigo, violet, maroon,
+-- golden, lime, olive, cyan, magenta, black, white, gray, lightGray,
+-- offWhite, darkGray, electricBlue, dodgerBlue, steelBlue, midnightBlue,
+-- darkBlue, darkSlateGreen, darkSlateBlue
