@@ -74,6 +74,13 @@ local function defineLabels()
     big = config.hudEuTFontSize / 3
     bigY = y - b1 - h/2 - 3.5*big
   end
+  -- The time left past the bar: the percentage's size and height, or its own size
+  -- (hudTimeLeftFontSize) centred on the bar's height
+  local timeScale, timeY = fs / 3, y - b1 - h/1.8 - fs
+  if config.hudTimeLeftFontSize then
+    timeScale = config.hudTimeLeftFontSize / 3
+    timeY = y - b1 - h/2 - 3.5*timeScale
+  end
   local function eutLeft()
     return 3*h + l/2 - textWidth(eutText, big)/2
   end
@@ -100,7 +107,7 @@ local function defineLabels()
     end},
     alert = {scale = fs / 3, y = y - b1 - b2 - h - 3*fs, x = function() return b2 end},
     -- Time to full or empty: just past the bar's end, at the percentage's size and height
-    timeTo = {scale = fs / 3, y = y - b1 - h/1.8 - fs, x = function() return 3.5*h + l + b2 + 4 end},
+    timeTo = {scale = timeScale, y = timeY, x = function() return 3.5*h + l + b2 + 4 end},
   }
 end
 

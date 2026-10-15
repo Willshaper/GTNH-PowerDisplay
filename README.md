@@ -144,8 +144,9 @@ A colour is a name in quotes, from the list at the end of `config.lua` (e.g. `"e
 | `historyMinutes` | `30` | Minutes the screen's History graph covers. |
 | `barTextStyle` | `"shadow"` | Text on the HUD bar: `"shadow"` = light with a dark shadow, readable on both parts of the bar whatever the font; `"split"` = dark over the fill and light over the rest, letter by letter (can leave small gaps or overlaps with resource-pack fonts). |
 | `hudHeight`, `hudLength`, `hudBorderBottom`, `hudBorderTop` | `12`, `168`, `2`, `2` | HUD size, in GUI pixels. |
-| `hudFontSize` | `3` | Size of the percentage, alerts and time left. |
+| `hudFontSize` | `3` | Size of the percentage and alerts. |
 | `hudEuTFontSize` | `false` | Size of the EU/t and arrows. `false`: the size of the stored/max EU; `3`: as big as the percentage. |
+| `hudTimeLeftFontSize` | `false` | Size of the time left past the bar. `false`: as big as the percentage; a smaller number, e.g. `2`, makes it smaller (it stays centred on the bar). |
 | `hudShapeOpacity`, `hudTextOpacity` | `0.9`, `1.0` | HUD opacity, 0 to 1. |
 | `lscAddress` | `false` | Only with several GregTech machines connected: the LSC's address (the start is enough). |
 

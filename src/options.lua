@@ -65,6 +65,7 @@ local DEFAULTS = {
   hudBorderTop = 2,
   hudFontSize = 3,
   hudEuTFontSize = false,
+  hudTimeLeftFontSize = false,
   hudShapeOpacity = 0.9,
   hudTextOpacity = 1.0,
   lscAddress = false,
@@ -257,6 +258,10 @@ local function check(config)
   if config.hudEuTFontSize ~= false and not (isNumber(config.hudEuTFontSize) and config.hudEuTFontSize >= 1) then
     problem('hudEuTFontSize', string.format('hudEuTFontSize must be a size of at least 1, or false for the same size as '
       .. 'the stored/max EU (it is %s)', tostring(config.hudEuTFontSize)))
+  end
+  if config.hudTimeLeftFontSize ~= false and not (isNumber(config.hudTimeLeftFontSize) and config.hudTimeLeftFontSize >= 1) then
+    problem('hudTimeLeftFontSize', string.format('hudTimeLeftFontSize must be a size of at least 1, or false for the '
+      .. "percentage's size (it is %s)", tostring(config.hudTimeLeftFontSize)))
   end
   number(config, 'hudShapeOpacity', 0, 1)
   number(config, 'hudTextOpacity', 0, 1)
