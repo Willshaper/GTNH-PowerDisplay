@@ -83,7 +83,14 @@ end
 -- barColor = electricBlue (without quotes) isn't silently ignored.
 function options.parse(text)
   local values = {}
-  local env = setmetatable({}, {
+  local env = {}
+  local chunk, err = load(text, '=config.lua', 't', env)
+  if not chunk then
+    return nil, 'config.lua has a typing mistake: ' .. tostring(err)
+  end
+  -- Only now: OpenOS's load looks names up in env itself (env.load), which must not
+  -- count as a mistake in config.lua
+  setmetatable(env, {
     __index = function(_, name)
       error(string.format('%s is unknown: text such as colour names and sides goes in quotes, e.g. "%s"', name, name), 2)
     end,
@@ -91,10 +98,6 @@ function options.parse(text)
       values[name] = value
     end,
   })
-  local chunk, err = load(text, '=config.lua', 't', env)
-  if not chunk then
-    return nil, 'config.lua has a typing mistake: ' .. tostring(err)
-  end
   local ok, result = pcall(chunk)
   if not ok then
     return nil, 'config.lua: ' .. tostring(result)
