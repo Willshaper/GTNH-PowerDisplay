@@ -16,7 +16,9 @@ This is a fork of [DylanTaylor1/GTNH-PowerDisplay](https://github.com/DylanTaylo
 - **Generator control (optional):** a redstone signal that starts your generators below one percentage and stops them above another.
 - **Starts by itself:** auto-start on boot, and wake on redstone so a redstone clock turns the computer back on after a power loss.
 - **Keeps running:** waits for the LSC at boot, and recovers by itself if a read fails (for example while the chunk reloads).
-- **Clear config errors:** a mistake in `config.lua` is explained in plain words instead of a Lua error.
+- **Simple settings file:** one setting per line with no commas to forget, word lists for what the HUD and the screen show, colours by name, and rarely used settings in an Advanced section.
+- **Clear config errors:** a mistake in `config.lua` is explained in plain words, naming the setting, instead of a Lua error.
+- **Updates keep your settings:** the installer carries your values into a newer `config.lua`.
 - **Maintenance warning fixed:** newer GregTech versions send the LSC's sensor lines in a different form, which silently broke the original "Has Problems!" check.
 
 # Components
@@ -56,7 +58,7 @@ To use the MFU upgrade, sneak right-click the LSC controller before placing it i
         wget -f https://raw.githubusercontent.com/Willshaper/GTNH-PowerDisplay/main/setup.lua && setup
 
 8) The installer asks whether to start Power Display when the computer boots, and (with a redstone card) whether a redstone signal should turn the computer on.
-9) Change the settings with `edit config.lua`, especially the resolution and GUI scale for the HUD.
+9) Change the settings with `edit config.lua`, especially `windowSize` and `guiScale`, so the HUD lands in the corner.
 
 ![Setup](media/Setup.png?)
 
@@ -64,60 +66,97 @@ To use the MFU upgrade, sneak right-click the LSC controller before placing it i
 
 Enter `hud`. It runs until you press C (or Ctrl+Alt+C). Restart it after changing `config.lua`.
 
-To update, run the `wget` line above again. It asks whether to replace your `config.lua` with a fresh one (only the settings of the chosen install, at their defaults); the old one is then saved as `config.old.lua`. If you keep yours, the current defaults are saved next to it as `config.default.lua`, so you can see any new settings.
+To update, run the `wget` line above again. If there is a newer `config.lua`, it shows what changed and asks whether to switch to it. Your values are carried over, settings the chosen install doesn't use are left out, and a value the new version no longer accepts goes back to its default (each of these is listed). The old file is kept as `config.old.lua`. If you say no, your file stays and the new one is saved as `config.default.lua`.
 
 ## Settings
 
+`config.lua` has one setting per line, like `hudCorner = "right"`. A setting you leave out uses its default. Text goes in quotes. Restart the program after a change. A mistake is reported with the setting's name when the program starts.
+
+### What to show
+
+`hud` and `screen` are lists of words, in any order. `""` turns the HUD or the screen monitor off.
+
+| Word | HUD | Screen |
+|---|---|---|
+| `Percent` | charge %, left of the bar | inside the bar, on the left |
+| `Stored` | EU stored, at the start of the bar | under the bar |
+| `EUt` | net EU/t, in the middle of the bar | in the middle of the bar |
+| `Arrows` | `>` `>>` `>>>` after the EU/t while charging, `<` to `<<<` before it while draining | the same |
+| `Max` | capacity, at the end of the bar | under the bar |
+| `Maintenance` | "Has Problems!" above the bar | status in the title and a warning at the bottom |
+| `TimeLeft` | "Full: 52min" / "Empty: 2h 05min", past the end of the bar | "Full in 52m 00s", under the bar |
+| `Averages` | | GregTech's In/Out/Net over 5 s, 5 min and 1 hour |
+| `PassiveLoss` | | the LSC's passive loss, under Out |
+| `History` | | a graph of the charge |
+
 | Setting | Default | What it does |
 |---|---|---|
-| `showHud` / `showScreen` | `true` / `true` | Where to show the display. |
-| `resolution`, `fullscreen`, `GUIscale` | `{1920, 1080}`, `true`, `3` | Your Minecraft window, used to place the HUD. |
-| `hudSide` | `'left'` | Bottom corner for the HUD. `'right'` mirrors the shapes: the bar fills leftwards and slants the other way, and the percentage sits at the right edge. The text on the bar reads the same as on the left. It needs the right `resolution`. |
-| `showPercent` | `true` | Charge percentage: next to the HUD bar, inside the screen's bar. |
-| `showCurrentEU`, `showMaxEU` | `true` | Stored and maximum EU: on the HUD bar, under the screen's bar. |
-| `showEUt` | `true` | Net EU/t in the middle of the bar (HUD and screen). |
-| `showArrows` | `true` | Animated arrows after the EU/t while charging (nothing, `>`, `>>`, `>>>`, repeating) and before it while discharging (`<` to `<<<`), on the HUD and the screen. |
-| `euTAverage` | `5` | The EU/t is the average over this many seconds (HUD and screen). |
-| `showMaintenance` | `true` | Maintenance status: "Has Problems!" on the HUD, and the status and warning on the screen. |
-| `metric` | `true` | Numbers as `4.4G` or as `4.42e9`. |
-| `wirelessMode`, `wirelessMax` | `false`, `1e15` | Show the wireless network's EU instead. It has no maximum, so `wirelessMax` counts as 100%. |
-| `height`, `length`, `borderBottom`, `borderTop`, `fontSize` | | HUD size. |
-| `euTFontSize` | `false` | Size of the EU/t text and its arrows on the HUD bar. `false`: the same size as the stored and max EU. A number sets its own size, on the same scale as `fontSize` (`3` is as big as the percentage). |
-| `shapeAlpha`, `textAlpha` | `0.9`, `1.0` | HUD transparency. |
-| `primaryColor`, `secondaryColor`, `issueColor` | | Bar colours: filled, empty, low power (HUD and screen). |
-| `borderColor` | | Colour of the frame around the bar (HUD and screen). |
-| `textColor`, `textColorEmpty` | `colors.black`, `colors.offWhite` | Text on the bar: `textColor` over the filled part, `textColorEmpty` over the empty part (HUD and screen). |
-| `barTextStyle` | `'split'` | How text on the HUD bar stays readable. `'split'`: each letter is `textColor` over the filled part and `textColorEmpty` over the empty part. `'shadow'`: `textColorEmpty` text with a `textColor` shadow. Use `'shadow'` if `'split'` leaves small gaps or overlaps in the text (possible with resource-pack fonts). |
-| `euTColor` | `false` | One fixed colour for the EU/t text and arrows. `false` follows `barTextStyle`. |
-| `lowPowerAlert` | `20` | Percentage below which the low power alert shows. `false` turns it off. |
-| `lowPowerBlink` | `true` | Blink the bar while power is low. |
-| `generatorControl` | `false` | Turn on generator control (see below). |
-| `generatorRedstoneAddress` | `false` | Address of the Redstone I/O block for generator control (the start is enough, e.g. `'1a2b3c4d'`). Required when `generatorControl` is on. |
-| `generatorSide` | `'north'` | Side of the Redstone I/O block the signal comes out of: `north`, `south`, `east`, `west`, `top` or `bottom`. |
-| `generatorOnBelow`, `generatorOffAbove` | `20`, `90` | Start the generators below the first percentage, stop them above the second. |
-| `generatorSignal` | `'stop'` | `'stop'`: a signal means stop. `'run'`: a signal means run. |
-| `showTimeToFullOrEmptyOnScreen` | `true` | "Full in" / "Empty in" under the screen's bar. |
-| `showTimeToFullOrEmptyOnHud` | `false` | "Full: 52min" / "Empty: 2h 05min" just past the end of the HUD bar (before it on the right-side HUD). |
-| `timeToFullOrEmptyAverage` | `30` | The time to full or empty is worked out from the average EU/t over this many seconds (HUD and screen). |
-| `timeToFullOrEmptyUpdateOnScreen` | `5` | How often, in seconds, the time to full or empty on the screen changes. On the HUD it changes together with the EU/t. |
-| `timeToFullOrEmptyColor` | `colors.offWhite` | Colour of the time to full or empty next to the HUD bar. |
-| `showAverages` | `true` | GregTech's In/Out/Net averages (5 s, 5 min, 1 hour) on the screen. |
-| `showHistory` | `true` | Show the history graph on the screen. |
-| `historyMinutes` | `30` | How much time the screen's history graph covers. |
-| `showPassiveLoss` | `true` | Show the LSC's passive loss on the screen, under the Out column. The Net column includes it either way. |
-| `linkedCard` | `false` | Send the display through the linked card(s) in this computer, for `viewer` on another computer (see below). |
-| `lscAddress` | `false` | Only needed if the computer sees more than one GregTech machine: the start of the LSC's `gt_machine` address. |
-| `sleep` | `1` | Seconds between updates. |
+| `hud` | `"Percent Stored EUt Arrows Max Maintenance"` | What the HUD shows. |
+| `screen` | all ten words | What the computer's screen shows. |
+| `hudCorner` | `"left"` | Bottom corner for the HUD. `"right"` mirrors it: the bar fills leftwards and slants the other way; the text on the bar reads the same. |
+| `lowPower` | `20` | Below this %, the bar turns red (and blinks) and "Low power!" shows. `false` turns it off. |
+
+### Your Minecraft window
+
+| Setting | Default | What it does |
+|---|---|---|
+| `windowSize` | `{1920, 1080}` | Your monitor's resolution (the game window's size when not fullscreen), to place the HUD in the corner. |
+| `fullscreen` | `true` | Whether the game runs fullscreen. |
+| `guiScale` | `3` | Video Settings > GUI Scale. |
+
+### Generators and linked card
+
+| Setting | Default | What it does |
+|---|---|---|
+| `generatorControl` | `false` | The Redstone I/O block's address, e.g. `"1a2b3c4d"` (see Generator control below). `false` = off. |
+| `generatorOnBelow`, `generatorOffAbove` | `20`, `90` | Start the generators below the first %, stop them above the second. |
+| `generatorSide` | `"north"` | Side of the block the signal leaves: `north`, `south`, `east`, `west`, `top` or `bottom`. |
+| `generatorSignal` | `"stop"` | `"stop"`: a signal stops them. `"run"`: a signal runs them. |
+| `linkedCard` | `false` | `true` sends the display through the linked card(s), for the viewer on another computer. |
+
+### Colours
+
+A colour is a name in quotes, from the list at the end of `config.lua` (e.g. `"electricBlue"`), or a number like `0xFF8800`.
+
+| Setting | Default | What it colours |
+|---|---|---|
+| `barColor` | `"electricBlue"` | The filled part of the bar, and the percentage. |
+| `barEmptyColor` | `"darkSlateBlue"` | The empty part of the bar. |
+| `textOverFillColor` | `"black"` | Text over the filled part. |
+| `textOverEmptyColor` | `"offWhite"` | Text over the empty part. |
+| `alertColor` | `"red"` | "Low power!", "Has Problems!" and the low power bar. |
+| `frameColor` | `"darkGray"` | The frame around the bar. |
+| `timeLeftColor` | `"offWhite"` | The time left next to the HUD bar. |
+| `euTColor` | `false` | One fixed colour for the EU/t and arrows. `false`: like the other text on the bar. |
+
+### Advanced
+
+| Setting | Default | What it does |
+|---|---|---|
+| `numberFormat` | `"metric"` | `"metric"` = `4.4G`, `"scientific"` = `4.42e9`. |
+| `wireless` | `false` | Show the wireless network's EU instead of the LSC's: the amount that counts as 100%, e.g. `1e15` (the network has no maximum). |
+| `euTAverage` | `5` | The EU/t is the average over this many seconds. |
+| `timeLeftAverage` | `30` | The time left is worked out from the average over this many seconds. |
+| `timeLeftUpdateOnScreen` | `5` | The screen's time left changes every this many seconds. On the HUD it changes together with the EU/t. |
+| `updateEvery` | `1` | Seconds between updates. |
+| `lowPowerBlink` | `true` | The low power bar blinks. |
+| `historyMinutes` | `30` | Minutes the screen's History graph covers. |
+| `barTextStyle` | `"split"` | Text on the HUD bar: `"split"` = dark over the fill and light over the rest, letter by letter; `"shadow"` = light with a dark shadow. Use `"shadow"` if `"split"` leaves small gaps or overlaps (possible with resource-pack fonts). |
+| `hudHeight`, `hudLength`, `hudBorderBottom`, `hudBorderTop` | `12`, `168`, `2`, `2` | HUD size, in GUI pixels. |
+| `hudFontSize` | `3` | Size of the percentage, alerts and time left. |
+| `hudEuTFontSize` | `false` | Size of the EU/t and arrows. `false`: the size of the stored/max EU; `3`: as big as the percentage. |
+| `hudShapeOpacity`, `hudTextOpacity` | `0.9`, `1.0` | HUD opacity, 0 to 1. |
+| `lscAddress` | `false` | Only with several GregTech machines connected: the LSC's address (the start is enough). |
 
 ## Generator control
 
 With a Redstone I/O block connected to the computer, Power Display can start your generators when the LSC runs low and stop them when it is full enough. Between the two percentages the generators keep doing what they were doing, so they don't switch on and off all the time. The computer's redstone card isn't used for this; it stays free for wake on redstone.
 
 1. Place a Redstone I/O block and connect it to the computer with cable.
-2. Set `generatorControl = true` and `generatorRedstoneAddress` to the block's address. To find it, shift-right-click the block with an Analyzer, or start Power Display: while the address is missing, the screen lists every Redstone I/O block it can see.
+2. Set `generatorControl` to the block's address, e.g. `generatorControl = "1a2b3c4d"`. To find it, shift-right-click the block with an Analyzer, or set `generatorControl = "?"` and start Power Display: the screen lists every Redstone I/O block it can see.
 3. Set `generatorSide` to the side of the block your wiring leaves from (`north`, `south`, `east`, `west`, `top` or `bottom`).
 
-The recommended wiring uses `generatorSignal = 'stop'`: put a Machine Controller cover set to "Disable with Redstone" on each generator (or on whatever turns them on) and run the signal to it. The block only sends a signal while the generators should stop. If Power Display can't read the LSC, or stops, it lets the generators run. With `'run'` it is the other way around: the signal means run.
+The recommended wiring uses `generatorSignal = "stop"`: put a Machine Controller cover set to "Disable with Redstone" on each generator (or on whatever turns them on) and run the signal to it. The block only sends a signal while the generators should stop. If Power Display can't read the LSC, or stops, it lets the generators run. With `"run"` it is the other way around: the signal means run.
 
 A Redstone I/O block keeps its last signal when the computer turns off. That is safe in practice: the computer only loses power when the LSC is empty, and by then the generators have already been told to run. With auto-start and wake on redstone (below), the computer comes back and takes over again.
 
@@ -136,7 +175,7 @@ A second computer anywhere, even in another dimension, can show the same monitor
 
 1. Craft a pair of linked cards. Put one in the Power Display computer and set `linkedCard = true` in its `config.lua`.
 2. Build a second computer with a screen and graphics card (and a glasses terminal for the HUD there), and put the other linked card in it. It doesn't need an adapter or an LSC.
-3. Run the same install command on it and answer 2 (viewer). It installs only what the viewer needs, with its own `config.lua` that has just the settings for how things look.
+3. Run the same install command on it and answer 2 (viewer). It installs only what the viewer needs, with its own `config.lua` that has just the settings for what to show and how it looks.
 4. Run `viewer` there.
 
 The viewer uses its own `config.lua` for colours, sizes and what to show. The values (EU/t, time to full or empty, generator state) come from the Power Display computer. If nothing arrives for a while, the viewer says so.

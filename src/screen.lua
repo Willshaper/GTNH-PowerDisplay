@@ -120,8 +120,8 @@ local function usePalette()
   local colors, seen = {}, {}
   for _, color in ipairs({
     COLOR.background, COLOR.text, COLOR.dim, COLOR.faint, COLOR.good, COLOR.bad, COLOR.warn, COLOR.graph,
-    config.primaryColor, config.secondaryColor, config.textColor, config.textColorEmpty, config.issueColor,
-    config.borderColor,
+    config.barColor, config.barEmptyColor, config.textOverFillColor, config.textOverEmptyColor, config.alertColor,
+    config.frameColor,
   }) do
     if not seen[color] and #colors < 16 then
       seen[color] = true
@@ -182,7 +182,7 @@ function screen.stop()
 end
 
 function screen.addSample(time, fraction)
-  if not gpu or not config.showHistory then
+  if not gpu or not config.screen.History then
     return
   end
   local index = math.floor(time / bucketSeconds)
@@ -267,16 +267,16 @@ local function barTexts(size, now)
       end
     end
   end
-  if config.showPercent then
+  if config.screen.Percent then
     put(1, format.percent(data.percent))
   end
   local eut = ''
-  if config.showEUt and view.eut then
-    eut = format.rate(view.eut, config.metric) .. ' EU/t'
+  if config.screen.EUt and view.eut then
+    eut = format.rate(view.eut, config.numberFormat == 'metric') .. ' EU/t'
   end
   local start = math.floor((size - unicode.len(eut)) / 2)
   put(start, eut)
-  if config.showArrows then
+  if config.screen.Arrows then
     local arrows = format.arrows(view.direction, now)
     if view.direction > 0 then
       put(start + unicode.len(eut) + (eut == '' and 0 or 1), arrows)
@@ -294,12 +294,12 @@ end
 local function drawBar(now)
   local data, view = lastData, lastView
   local size = width - 4 -- a margin and the frame on each side
-  local fillColor = config.primaryColor
+  local fillColor = config.barColor
   if view.lowPower and (not config.lowPowerBlink or blinkPhase(now)) then
-    fillColor = config.issueColor
+    fillColor = config.alertColor
   end
-  local emptyColor = config.secondaryColor
-  local frame = config.borderColor
+  local emptyColor = config.barEmptyColor
+  local frame = config.frameColor
   local full = math.floor(data.percent * size + 0.5)
   local texts = barTexts(size, now)
 
@@ -322,7 +322,7 @@ local function drawBar(now)
       elseif line == 2 then
         add('▀', inside, frame) -- bar above, frame below
       elseif texts[i] then
-        add(texts[i], i < full and config.textColor or config.textColorEmpty, inside)
+        add(texts[i], i < full and config.textOverFillColor or config.textOverEmptyColor, inside)
       else
         add(' ', COLOR.text, inside)
       end
@@ -400,12 +400,12 @@ function screen.update(data, view)
   beginFrame()
   lastData, lastView = data, view
   local now = computer.uptime()
-  local metric = config.metric
+  local metric = config.numberFormat == 'metric'
   local y = 1
 
   -- Title and status
   local status = {'', COLOR.text}
-  if config.showMaintenance then
+  if config.screen.Maintenance then
     if data.maintenanceOk then
       status = {' Maintenance OK ', COLOR.good}
     else
@@ -416,7 +416,7 @@ function screen.update(data, view)
   if view.remote then
     title = title .. ' (linked card)'
   end
-  split(y, {{title, COLOR.text}, {config.wirelessMode and '  (wireless)' or '', COLOR.dim}}, {status})
+  split(y, {{title, COLOR.text}, {config.wireless and '  (wireless)' or '', COLOR.dim}}, {status})
   y = y + 2
 
   barRow = y
@@ -425,7 +425,7 @@ function screen.update(data, view)
 
   -- Stored and max EU, and the time to full or empty
   local timeText = ''
-  if config.showTimeToFullOrEmptyOnScreen then
+  if config.screen.TimeLeft then
     if data.percent >= 0.9995 and (view.eut or 0) >= 0 then
       timeText = 'Full'
     elseif data.percent <= 0.0005 and (view.eut or 0) <= 0 then
@@ -439,11 +439,11 @@ function screen.update(data, view)
     end
   end
   local left = {}
-  if config.showCurrentEU then
+  if config.screen.Stored then
     table.insert(left, {' ' .. format.eu(data.stored, metric, 2), COLOR.text})
   end
-  if config.showMaxEU then
-    table.insert(left, {(config.showCurrentEU and ' / ' or ' '), COLOR.dim})
+  if config.screen.Max then
+    table.insert(left, {(config.screen.Stored and ' / ' or ' '), COLOR.dim})
     table.insert(left, {format.eu(data.capacity, metric, 2), COLOR.text})
   end
   if #left > 0 then
@@ -454,7 +454,7 @@ function screen.update(data, view)
 
   -- GT's own averages, when there is room for them
   local footer = height
-  if config.showAverages and height >= 20 then
+  if config.screen.Averages and height >= 20 then
     local c1, c2 = 14, 14
     row(y, {{pad('', c1) .. pad('In', c2, true) .. pad('Out', c2, true) .. pad('Net', c2, true), COLOR.faint}})
     local windows = {
@@ -477,7 +477,7 @@ function screen.update(data, view)
       })
     end
     y = y + 5
-    if config.showPassiveLoss then
+    if config.screen.PassiveLoss then
       -- An outflow on top of Out (Net includes it), so it sits in that column
       row(y - 1, {
         {pad(' Passive Loss', c1), COLOR.dim},
@@ -486,7 +486,7 @@ function screen.update(data, view)
       })
       y = y + 1
     end
-  elseif config.showPassiveLoss then
+  elseif config.screen.PassiveLoss then
     row(y, {{' Passive Loss  ', COLOR.dim}, {format.eu(data.passiveLoss, metric, 2) .. ' EU/t', COLOR.text}})
     y = y + 2
   end
@@ -512,7 +512,7 @@ function screen.update(data, view)
   end
 
   -- History graph in the space that is left
-  if config.showHistory and footer - 1 - y >= 3 then
+  if config.screen.History and footer - 1 - y >= 3 then
     row(y, {{string.format(' History, last %s min', config.historyMinutes), COLOR.dim}})
     drawGraph(y + 1, footer - 1)
   end
@@ -520,15 +520,15 @@ function screen.update(data, view)
   -- Footer: alerts, or how to stop
   local alerts = {}
   if view.lowPower then
-    table.insert(alerts, {string.format(' LOW POWER (below %s%%) ', config.lowPowerAlert), COLOR.bad})
+    table.insert(alerts, {string.format(' LOW POWER (below %s%%) ', config.lowPower), COLOR.bad})
   end
-  if config.showMaintenance and not data.maintenanceOk then
+  if config.screen.Maintenance and not data.maintenanceOk then
     table.insert(alerts, {' MAINTENANCE NEEDED ', COLOR.bad})
   end
   if #alerts > 0 then
     row(footer, alerts)
   else
-    local text = ' Press C to stop.  Updates every ' .. config.sleep .. 's.'
+    local text = ' Press C to stop.  Updates every ' .. config.updateEvery .. 's.'
     for _, note in ipairs(view.notes or {}) do
       text = text .. '  ' .. note .. '.'
     end

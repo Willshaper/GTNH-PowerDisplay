@@ -54,10 +54,7 @@ function generators.start(cfg)
   if not config.generatorControl then
     return nil
   end
-  local wanted = config.generatorRedstoneAddress
-  if not wanted then
-    return 'set generatorRedstoneAddress in config.lua', blocksFound()
-  end
+  local wanted = config.generatorControl
   local ok, address = pcall(component.get, wanted, 'redstone')
   if not ok or not address then
     return 'no Redstone I/O block with address ' .. wanted, blocksFound()
@@ -71,7 +68,7 @@ function generators.start(cfg)
 end
 
 function generators.enabled()
-  return config ~= nil and config.generatorControl and redstone ~= nil
+  return config ~= nil and config.generatorControl ~= false and redstone ~= nil
 end
 
 -- percent: 0..1, or nil if the LSC couldn't be read (then the generators run)

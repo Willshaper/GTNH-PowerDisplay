@@ -28,8 +28,8 @@ configPath = configPath and shell.resolve(configPath) or shell.resolve('config.l
 local config, problems = options.load(configPath)
 if not config then
   io.stderr:write('The viewer did not start. Please fix config.lua (edit config.lua):\n')
-  for _, text in ipairs(problems) do
-    io.stderr:write('  - ' .. text .. '\n')
+  for _, found in ipairs(problems) do
+    io.stderr:write('  - ' .. found.text .. '\n')
   end
   return
 end
@@ -101,7 +101,7 @@ local function main()
           applySender(packet.config)
           local data, view = packet.data, packet.view
           view.remote = true
-          view.lowPower = config.lowPowerAlert ~= false and data.percent * 100 < config.lowPowerAlert
+          view.lowPower = config.lowPower ~= false and data.percent * 100 < config.lowPower
           if config.showHud then
             hud.update(data, view)
           end
@@ -113,7 +113,7 @@ local function main()
     end
 
     -- Nothing heard for a while: the other computer is off, or its chunk isn't loaded
-    local stale = STALE_SECONDS + 3 * (config.sleep or 1)
+    local stale = STALE_SECONDS + 3 * (config.updateEvery or 1)
     if lastReceived and now - lastReceived > stale and not staleShown then
       showingData, staleShown = false, true
       hud.notice('No data from the Power Display computer')

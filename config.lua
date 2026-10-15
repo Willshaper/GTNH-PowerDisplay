@@ -1,139 +1,74 @@
--- Power Display settings. Restart the program after changing anything.
--- Each setting ends with a comma. Anything you delete falls back to its default.
+-- Power Display settings. Restart hud after changing anything.
+-- One setting per line. A setting you leave out uses its default.
 
-local colors = {
-  red = 0xFF0000,
-  orange = 0xFFA500,
-  yellow = 0xFFFF00,
-  green = 0x008000,
-  blue = 0x0000FF,
-  indigo = 0x4B0082,
-  violet = 0x800080,
+-- What the HUD on your AR glasses shows. Use any of these words, in any order:
+--   Percent     = charge %, left of the bar
+--   Stored      = EU stored, at the start of the bar
+--   EUt         = net EU/t, in the middle of the bar
+--   Arrows      = > >> >>> next to the EU/t while charging, <<< while draining
+--   Max         = capacity, at the end of the bar
+--   Maintenance = "Has Problems!" above the bar when the LSC needs maintenance
+--   TimeLeft    = "Full: 52min" / "Empty: 2h 05min", past the end of the bar
+-- "" = no HUD.
+hud = "Percent Stored EUt Arrows Max Maintenance"
 
-  maroon = 0x800000,
-  golden = 0xDAA520,
-  lime = 0x00FF00,
-  olive = 0x556B2F,
-  cyan = 0x00FFFF,
-  magenta = 0xFF00FF,
+-- What this computer's screen shows: the same words, and also
+--   Averages    = GregTech's own In/Out/Net over 5 s, 5 min and 1 hour
+--   PassiveLoss = the LSC's passive loss
+--   History     = a graph of the charge over the last historyMinutes
+-- "" = no screen monitor.
+screen = "Percent Stored EUt Arrows Max Maintenance TimeLeft Averages PassiveLoss History"
 
-  black = 0x000000,
-  white = 0xFFFFFF,
-  gray = 0x3C5B72,
-  lightGray = 0xA9A9A9,
-  offWhite = 0xE6E6E6,
-  darkGray = 0x181828,
+hudCorner = "left"         -- bottom corner for the HUD: "left" or "right" (mirrored)
+lowPower = 20              -- below this %, the bar turns red and "Low power!" shows (false = off)
 
-  electricBlue = 0x00A6FF,
-  dodgerBlue = 0x1E90FF,
-  steelBlue = 0x4682B4,
-  midnightBlue = 0x191970,
-  darkBlue = 0x000080,
+-- Your Minecraft window, so the HUD lands in the corner
+windowSize = {1920, 1080}  -- your monitor's resolution (the game window's size when not fullscreen)
+fullscreen = true
+guiScale = 3               -- Video Settings > GUI Scale
 
-  darkSlateGreen = 0x2F4F4F,
-  darkSlateBlue = 0x303850,
-}
+-- Generators (optional): a Redstone I/O block switches them on and off
+generatorControl = false   -- the Redstone I/O block's address, e.g. "1a2b3c4d" (false = off).
+                           -- Set it to "?" and start hud to see the blocks it can find.
+generatorOnBelow = 20      -- start the generators below this %
+generatorOffAbove = 90     -- stop them again above this %
+generatorSide = "north"    -- side of the block the signal leaves: north, south, east, west, top or bottom
+generatorSignal = "stop"   -- "stop" = a signal stops them, "run" = a signal runs them
 
-return {
+-- Another computer (optional): it shows this display, through a pair of linked cards
+linkedCard = false         -- true = send to the viewer on the other computer
 
-  -- Where to show it: AR glasses HUD, the computer's screen, or both
-  showHud = true,
-  showScreen = true,
+-- Colours: a name from the list at the end of this file in quotes, or a number like 0xFF8800
+barColor = "electricBlue"         -- the filled part of the bar, and the percentage
+barEmptyColor = "darkSlateBlue"   -- the empty part of the bar
+textOverFillColor = "black"       -- text over the filled part
+textOverEmptyColor = "offWhite"   -- text over the empty part
+alertColor = "red"                -- "Low power!", "Has Problems!" and the low power bar
+frameColor = "darkGray"           -- the frame around the bar
+timeLeftColor = "offWhite"        -- the time left next to the HUD bar
+euTColor = false                  -- one fixed colour for the EU/t and arrows (false = like other text)
 
-  -- Your Minecraft window (for placing the HUD)
-  resolution = {1920, 1080},
-  fullscreen = true,
-  GUIscale = 3,
-  -- Which bottom corner the HUD sits in: 'left' or 'right' (the shapes are mirrored,
-  -- the text on the bar reads the same).
-  -- 'right' needs the resolution above to be right.
-  hudSide = 'left',
+-- Advanced
+numberFormat = "metric"    -- "metric" = 4.4G, "scientific" = 4.42e9
+wireless = false           -- show the wireless network's EU instead: the amount that counts as 100%, e.g. 1e15
+euTAverage = 5             -- the EU/t is the average over this many seconds
+timeLeftAverage = 30       -- the time left is worked out from the average over this many seconds
+timeLeftUpdateOnScreen = 5 -- the screen's time left changes every this many seconds (the HUD's with the EU/t)
+updateEvery = 1            -- seconds between updates
+lowPowerBlink = true       -- the low power bar blinks
+historyMinutes = 30        -- minutes the screen's History graph covers
+barTextStyle = "split"     -- HUD text on the bar: "split" = dark over the fill, light over the rest,
+                           -- letter by letter; "shadow" = light with a dark shadow (for resource-pack fonts)
+hudHeight = 12             -- HUD size, in GUI pixels
+hudLength = 168
+hudBorderBottom = 2
+hudBorderTop = 2
+hudFontSize = 3            -- the percentage, alerts and time left
+hudEuTFontSize = false     -- the EU/t and arrows (false = the size of the stored/max EU; 3 = as big as the %)
+hudShapeOpacity = 0.9      -- 0 to 1
+hudTextOpacity = 1.0       -- 0 to 1
+lscAddress = false         -- with several GregTech machines connected: the LSC's address, e.g. "e190015a"
 
-  -- Values on the bar (HUD and screen)
-  showPercent = true,   -- charge % left of the bar
-  showCurrentEU = true,
-  showMaxEU = true,
-  showEUt = true,       -- net EU/t in the middle of the bar
-  euTAverage = 5,       -- the EU/t is the average over this many seconds (HUD and screen)
-  showArrows = true,    -- animated > >> >>> after the EU/t while charging, <<< before it while discharging (HUD and screen)
-
-  -- Maintenance status: "Has Problems!" on the HUD, status and warning on the screen
-  showMaintenance = true,
-
-  -- Wireless mode: show the wireless network's EU instead of the LSC's own
-  wirelessMode = false,
-  wirelessMax = 1e15,   -- the wireless network has no maximum; this is what counts as 100%
-
-  -- Numbers as 4.4G (true) or 4.42e9 (false)
-  metric = true,
-
-  -- HUD size
-  height = 12,
-  length = 168,
-  borderBottom = 2,
-  borderTop = 2,
-  fontSize = 3,
-  euTFontSize = false,  -- size of the EU/t text and arrows; false: the same as the stored/max EU (3 = as big as the %)
-
-  -- HUD transparency (0 to 1)
-  shapeAlpha = 0.9,
-  textAlpha = 1.0,
-
-  -- Colours (see the list at the top). The bar and its text look the same on the screen.
-  primaryColor = colors.electricBlue,
-  secondaryColor = colors.darkSlateBlue,
-  textColor = colors.black,         -- text over the filled part of the bar
-  textColorEmpty = colors.offWhite, -- text over the empty part of the bar
-  -- How text on the HUD bar stays readable:
-  -- 'split':  each letter takes textColor or textColorEmpty, whichever part of the bar it is over
-  -- 'shadow': textColorEmpty text with a textColor shadow (use this if 'split' leaves gaps
-  --           or overlaps in the text, which can happen with resource-pack fonts)
-  barTextStyle = 'split',
-  euTColor = false,     -- one fixed colour for the EU/t text and arrows; false follows barTextStyle
-  issueColor = colors.red,
-  timeToFullOrEmptyColor = colors.offWhite, -- the time to full or empty next to the HUD bar
-  borderColor = colors.darkGray,
-
-  -- Low power alert: the bar turns red below this percentage (false turns it off)
-  lowPowerAlert = 20,
-  lowPowerBlink = true,
-
-  -- Generator control, through a Redstone I/O block (the computer's redstone card is
-  -- only for wake on redstone)
-  generatorControl = false,
-  -- The Redstone I/O block's address, or its start, in quotes, e.g. '1a2b3c4d'. Find it
-  -- by shift-right-clicking the block with an Analyzer, or just start the program: the
-  -- screen lists the Redstone I/O blocks it can see.
-  generatorRedstoneAddress = false,
-  generatorSide = 'north',  -- which side of the Redstone I/O: north, south, east, west, top or bottom
-  generatorOnBelow = 20,    -- start the generators below this percentage
-  generatorOffAbove = 90,   -- stop them again above this percentage
-  -- 'stop': a redstone signal means stop
-  -- 'run':  a redstone signal means run
-  generatorSignal = 'stop',
-
-  -- Time to full or empty: "Full in 5m 26s" under the screen's bar, "Full: 5min" next to
-  -- the HUD bar
-  showTimeToFullOrEmptyOnScreen = true,
-  showTimeToFullOrEmptyOnHud = false,
-  timeToFullOrEmptyAverage = 30, -- worked out from the average EU/t over this many seconds
-  timeToFullOrEmptyUpdateOnScreen = 5, -- the screen's changes every this many seconds (the HUD's with the EU/t)
-  -- Screen: GregTech's own In/Out/Net averages over 5 s, 5 min and 1 hour
-  showAverages = true,
-  -- Screen: a graph of the charge over the last historyMinutes minutes
-  showHistory = true,
-  historyMinutes = 30,
-  -- Screen: show the LSC's passive loss under the Out column (Net always includes it)
-  showPassiveLoss = true,
-
-  -- Which LSC to read if the computer sees more than one GregTech machine.
-  -- false finds it automatically; otherwise the start of its gt_machine address, e.g. 'e190015a'
-  lscAddress = false,
-
-  -- Send the display through the linked card(s) in this computer, to show it on another
-  -- computer's screen and glasses. Install the viewer there (same install command).
-  linkedCard = false,
-
-  -- Seconds between updates
-  sleep = 1,
-}
+-- Colour names: red, orange, yellow, green, blue, indigo, violet, maroon, golden, lime,
+-- olive, cyan, magenta, black, white, gray, lightGray, offWhite, darkGray, electricBlue,
+-- dodgerBlue, steelBlue, midnightBlue, darkBlue, darkSlateGreen, darkSlateBlue

@@ -23,9 +23,13 @@ configPath = configPath and shell.resolve(configPath) or shell.resolve('config.l
 local config, problems = options.load(configPath)
 if not config then
   io.stderr:write('Power Display did not start. Please fix config.lua (edit config.lua):\n')
-  for _, text in ipairs(problems) do
-    io.stderr:write('  - ' .. text .. '\n')
+  for _, found in ipairs(problems) do
+    io.stderr:write('  - ' .. found.text .. '\n')
   end
+  return
+end
+if not config.showHud then
+  io.stderr:write('Power Display did not start: hud in config.lua is empty, so there is nothing to show.\n')
   return
 end
 
@@ -104,7 +108,7 @@ local function run(machine)
   local average = lsc.newAverage(config.euTAverage)
   -- Time to full or empty: its own, longer average, worked out on every update
   -- together with the EU/t
-  local timeAverage = lsc.newAverage(config.timeToFullOrEmptyAverage)
+  local timeAverage = lsc.newAverage(config.timeLeftAverage)
   while true do
     local data = lsc.read(machine, config)
     local now = computer.uptime()
@@ -117,12 +121,12 @@ local function run(machine)
     elseif view.eut and view.eut <= -1 then
       view.direction = -1
     end
-    view.lowPower = config.lowPowerAlert ~= false and data.percent * 100 < config.lowPowerAlert
+    view.lowPower = config.lowPower ~= false and data.percent * 100 < config.lowPower
     view.hudTimeTo, view.hudTimeToWhat = lsc.timeTo(data, timeAverage.value())
 
     hud.update(data, view)
     hud.animate(now)
-    if wait(config.sleep, hud.animate) then
+    if wait(config.updateEvery, hud.animate) then
       return
     end
   end

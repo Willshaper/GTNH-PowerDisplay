@@ -115,13 +115,13 @@ end
 -- Reads everything once. Returns a table:
 --   stored, capacity, percent (0..1), maintenanceOk, passiveLoss,
 --   avgIn, avgOut (GT's ~5 s averages), avgIn5m, avgOut5m, avgIn1h, avgOut1h, wirelessEU
--- In wireless mode stored is the wireless network EU and capacity is config.wirelessMax.
+-- With config.wireless set, stored is the wireless network EU and capacity is that number.
 function lsc.read(machine, config)
   local lines = machine.getSensorInformation()
   local data = lsc.parse(lines)
-  if config.wirelessMode then
+  if config.wireless then
     data.stored = data.wirelessEU or 0
-    data.capacity = config.wirelessMax
+    data.capacity = config.wireless
   else
     -- The component getters are exact; the sensor lines are a fallback
     local okStored, stored = pcall(machine.getEUStored)

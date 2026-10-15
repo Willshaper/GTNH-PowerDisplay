@@ -14,8 +14,8 @@ local DATA_FIELDS = {'stored', 'capacity', 'percent', 'maintenanceOk', 'passiveL
   'avgIn', 'avgOut', 'avgIn5m', 'avgOut5m', 'avgIn1h', 'avgOut1h'}
 local VIEW_FIELDS = {'eut', 'direction', 'timeTo', 'timeToWhat', 'timeRate', 'hudTimeTo', 'hudTimeToWhat',
   'generators', 'generatorProblem', 'generatorHint'}
-local CONFIG_FIELDS = {'wirelessMode', 'generatorControl', 'generatorOnBelow', 'generatorOffAbove',
-  'generatorSide', 'sleep'}
+local CONFIG_FIELDS = {'wireless', 'generatorControl', 'generatorOnBelow', 'generatorOffAbove',
+  'generatorSide', 'updateEvery'}
 
 local function pick(from, fields)
   local out = {}

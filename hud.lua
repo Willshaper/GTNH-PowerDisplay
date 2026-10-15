@@ -27,8 +27,8 @@ configPath = configPath and shell.resolve(configPath) or shell.resolve('config.l
 local config, problems = options.load(configPath)
 if not config then
   io.stderr:write('Power Display did not start. Please fix config.lua (edit config.lua):\n')
-  for _, text in ipairs(problems) do
-    io.stderr:write('  - ' .. text .. '\n')
+  for _, found in ipairs(problems) do
+    io.stderr:write('  - ' .. found.text .. '\n')
   end
   return
 end
@@ -111,9 +111,9 @@ end
 local function run(machine)
   local average = lsc.newAverage(config.euTAverage)
   -- "Full in" / "Empty in" uses its own, longer average and changes only every
-  -- timeToFullOrEmptyUpdateOnScreen seconds on the screen, so it doesn't jump around.
+  -- timeLeftUpdateOnScreen seconds on the screen, so it doesn't jump around.
   -- The HUD shows it on every update, together with the EU/t.
-  local timeAverage = lsc.newAverage(config.timeToFullOrEmptyAverage)
+  local timeAverage = lsc.newAverage(config.timeLeftAverage)
   local timeTo, timeToWhat, timeRate
   local nextTimeTo = 0
   while true do
@@ -134,12 +134,12 @@ local function run(machine)
       timeRate = timeAverage.value()
       timeTo, timeToWhat = lsc.timeTo(data, timeRate)
       if timeRate then
-        nextTimeTo = now + config.timeToFullOrEmptyUpdateOnScreen
+        nextTimeTo = now + config.timeLeftUpdateOnScreen
       end
     end
     view.timeTo, view.timeToWhat, view.timeRate = timeTo, timeToWhat, timeRate
     view.hudTimeTo, view.hudTimeToWhat = lsc.timeTo(data, timeAverage.value())
-    view.lowPower = config.lowPowerAlert ~= false and data.percent * 100 < config.lowPowerAlert
+    view.lowPower = config.lowPower ~= false and data.percent * 100 < config.lowPower
 
     generators.update(data.percent)
     view.generators = generators.isRunning()
@@ -152,7 +152,7 @@ local function run(machine)
     screen.addSample(now, data.percent)
     screen.update(data, view)
 
-    if wait(config.sleep, animate) then
+    if wait(config.updateEvery, animate) then
       return
     end
   end

@@ -1,5 +1,5 @@
 -- The HUD bar on AR glasses (OCGlasses glasses terminals), based on the original PowerDisplay bar.
--- With hudSide = 'right' the shapes are mirrored across the screen: the bar fills
+-- With hudCorner = 'right' the shapes are mirrored across the screen: the bar fills
 -- leftwards from the right edge and slants the other way. The text on the bar reads
 -- exactly as on the left side (stored EU, EU/t, max EU, in that order).
 local component = require('component')
@@ -53,7 +53,7 @@ local function quad(glasses, v1, v2, v3, v4, color)
   setVertex(q, 3, v3[1], v3[2])
   setVertex(q, 4, v4[1], v4[2])
   q.setColor(RGB(color))
-  q.setAlpha(config.shapeAlpha)
+  q.setAlpha(config.hudShapeOpacity)
   return q
 end
 
@@ -64,14 +64,14 @@ end
 local labels = {}
 
 local function defineLabels()
-  local fs = config.fontSize
+  local fs = config.hudFontSize
   local small = fs / 1.3 / 3
   local textY = y - b1 - h/2 - fs
   -- The EU/t and its arrows: the same size and line as the stored/max EU, or their
-  -- own size (euTFontSize) centred on the bar's height (letters are 7 pixels tall at scale 1)
+  -- own size (hudEuTFontSize) centred on the bar's height (letters are 7 pixels tall at scale 1)
   local big, bigY = small, textY
-  if config.euTFontSize then
-    big = config.euTFontSize / 3
+  if config.hudEuTFontSize then
+    big = config.hudEuTFontSize / 3
     bigY = y - b1 - h/2 - 3.5*big
   end
   local function eutLeft()
@@ -139,17 +139,17 @@ local function barParts(name, value)
   local fixed = label.eut and config.euTColor or nil
   if config.barTextStyle == 'shadow' then
     local offset = label.scale -- Minecraft's shadow is 1 pixel at scale 1
-    return {value, x, label.y, fixed or config.textColorEmpty},
-      {value, x + offset, label.y + offset, config.textColor}
+    return {value, x, label.y, fixed or config.textOverEmptyColor},
+      {value, x + offset, label.y + offset, config.textOverFillColor}
   end
   if fixed or value == '' then
-    return {value, x, label.y, fixed or config.textColor}, {'', x, label.y, config.textColor}
+    return {value, x, label.y, fixed or config.textOverFillColor}, {'', x, label.y, config.textOverFillColor}
   end
   local parts = {}
   local position = x
   for c in value:gmatch('.') do
     local width = (CHAR_WIDTH[c] or 6) * label.scale
-    local color = overFill(position + width/2) and config.textColor or config.textColorEmpty
+    local color = overFill(position + width/2) and config.textOverFillColor or config.textOverEmptyColor
     local last = parts[#parts]
     if last and last[4] == color then
       last[1] = last[1] .. c
@@ -169,7 +169,7 @@ local function text(glasses, name, color)
   t.setPosition(labelX(name, ''), label.y)
   t.setScale(label.scale)
   t.setColor(RGB(color))
-  t.setAlpha(config.textAlpha)
+  t.setAlpha(config.hudTextOpacity)
   return t
 end
 
@@ -212,20 +212,20 @@ local function draw(glasses)
   local w = {}
 
   -- Static shapes
-  quad(glasses, {0, y-b1}, {3.5*h+l+b2+1, y-b1}, {2.5*h+l+1, y-b1-h-b2}, {0, y-b1-h-b2}, config.borderColor)
-  quad(glasses, {0, y}, {3.5*h+l+b2+1, y}, {3.5*h+l+b2+1, y-b1}, {0, y-b1}, config.borderColor)
-  quad(glasses, {3.5*h, y-b1}, {3.5*h+l, y-b1}, {2.5*h+l, y-b1-h}, {2.5*h, y-b1-h}, config.secondaryColor)
+  quad(glasses, {0, y-b1}, {3.5*h+l+b2+1, y-b1}, {2.5*h+l+1, y-b1-h-b2}, {0, y-b1-h-b2}, config.frameColor)
+  quad(glasses, {0, y}, {3.5*h+l+b2+1, y}, {3.5*h+l+b2+1, y-b1}, {0, y-b1}, config.frameColor)
+  quad(glasses, {3.5*h, y-b1}, {3.5*h+l, y-b1}, {2.5*h+l, y-b1-h}, {2.5*h, y-b1-h}, config.barEmptyColor)
 
   -- Energy bar and values
-  w.energyBar = quad(glasses, {b2+3.25*h, y-b1}, {b2+3.25*h, y-b1}, {b2+2.25*h, y-b1-h}, {b2+2.25*h, y-b1-h}, config.primaryColor)
-  w.percent = text(glasses, 'percent', config.primaryColor)
+  w.energyBar = quad(glasses, {b2+3.25*h, y-b1}, {b2+3.25*h, y-b1}, {b2+2.25*h, y-b1-h}, {b2+2.25*h, y-b1-h}, config.barColor)
+  w.percent = text(glasses, 'percent', config.barColor)
   -- Two widgets per text on the bar; the second first, so a shadow is drawn underneath
   for _, name in ipairs({'curr', 'max', 'eut', 'arrows'}) do
-    w[name .. '2'] = text(glasses, name, config.textColor)
-    w[name] = text(glasses, name, config.textColor)
+    w[name .. '2'] = text(glasses, name, config.textOverFillColor)
+    w[name] = text(glasses, name, config.textOverFillColor)
   end
-  w.alert = text(glasses, 'alert', config.issueColor)
-  w.timeTo = text(glasses, 'timeTo', config.timeToFullOrEmptyColor)
+  w.alert = text(glasses, 'alert', config.alertColor)
+  w.timeTo = text(glasses, 'timeTo', config.timeLeftColor)
   return w
 end
 
@@ -233,15 +233,15 @@ function hud.start(cfg)
   config = cfg
   terminals = {}
   lastData, lastView, eutText = nil, nil, ''
-  l, h = config.length, config.height
-  b1, b2 = config.borderBottom, config.borderTop
-  y = config.resolution[2] / config.GUIscale
+  l, h = config.hudLength, config.hudHeight
+  b1, b2 = config.hudBorderBottom, config.hudBorderTop
+  y = config.windowSize[2] / config.guiScale
   if not config.fullscreen then
     local offsets = {71, 35, 23, 17}
-    y = y - (offsets[config.GUIscale] or 0)
+    y = y - (offsets[config.guiScale] or 0)
   end
-  mirrored = config.hudSide == 'right'
-  screenWidth = config.resolution[1] / config.GUIscale
+  mirrored = config.hudCorner == 'right'
+  screenWidth = config.windowSize[1] / config.guiScale
   defineLabels()
   for address in component.list('glasses') do
     local proxy = component.proxy(address)
@@ -257,7 +257,7 @@ end
 -- ">", ">>", ">>>" while charging, "<" ... while discharging, on both sides.
 -- Without the EU/t text they sit in the middle of the bar on their own.
 local function arrowsText(now)
-  if not config.showArrows then
+  if not config.hud.Arrows then
     return ''
   end
   return format.arrows(lastView.direction, now)
@@ -269,9 +269,9 @@ function hud.animate(now)
   if not lastData then
     return
   end
-  local barColor = config.primaryColor
+  local barColor = config.barColor
   if lastView.lowPower and (not config.lowPowerBlink or blinkPhase(now)) then
-    barColor = config.issueColor
+    barColor = config.alertColor
   end
   local arrows = arrowsText(now)
   for _, t in ipairs(terminals) do
@@ -285,25 +285,26 @@ end
 -- data: from lsc.read; view: {eut, direction, lowPower, hudTimeTo, hudTimeToWhat}
 function hud.update(data, view)
   lastData, lastView = data, view
+  local metric = config.numberFormat == 'metric'
 
   eutText = ''
-  if config.showEUt and view.eut then
-    eutText = format.rate(view.eut, config.metric) .. ' EU/t'
+  if config.hud.EUt and view.eut then
+    eutText = format.rate(view.eut, metric) .. ' EU/t'
   end
 
   local alerts = {}
   if view.lowPower then
     table.insert(alerts, 'Low power!')
   end
-  if config.showMaintenance and not data.maintenanceOk then
+  if config.hud.Maintenance and not data.maintenanceOk then
     table.insert(alerts, 'Has Problems!')
   end
 
-  local percentColor = view.lowPower and config.issueColor or config.primaryColor
+  local percentColor = view.lowPower and config.alertColor or config.barColor
 
   -- "Full: 52min" / "Empty: 2h 05min"; nothing while steady or still measuring
   local timeToText = ''
-  if config.showTimeToFullOrEmptyOnHud then
+  if config.hud.TimeLeft then
     if data.percent >= 0.9995 and (view.eut or 0) >= 0 then
       timeToText = 'Full'
     elseif data.percent <= 0.0005 and (view.eut or 0) <= 0 then
@@ -320,12 +321,12 @@ function hud.update(data, view)
       setVertex(w.energyBar, 2, b2+3.25*h+fill, y-b1)
       setVertex(w.energyBar, 3, b2+2.25*h+fill, y-b1-h)
     end
-    setLabel(t, 'percent', config.showPercent and format.percent(data.percent) or '')
+    setLabel(t, 'percent', config.hud.Percent and format.percent(data.percent) or '')
     if changed(t, 'percentColor', percentColor) then
       w.percent.setColor(RGB(percentColor))
     end
-    setLabel(t, 'curr', config.showCurrentEU and format.eu(data.stored, config.metric) or '')
-    setLabel(t, 'max', config.showMaxEU and format.eu(data.capacity, config.metric) or '')
+    setLabel(t, 'curr', config.hud.Stored and format.eu(data.stored, metric) or '')
+    setLabel(t, 'max', config.hud.Max and format.eu(data.capacity, metric) or '')
     setLabel(t, 'eut', eutText)
     setLabel(t, 'alert', table.concat(alerts, '  '))
     setLabel(t, 'timeTo', timeToText)
