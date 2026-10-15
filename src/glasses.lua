@@ -64,25 +64,17 @@ end
 local labels = {}
 
 local function defineLabels()
-  local fs = config.hudFontSize
-  local small = fs / 1.3 / 3
-  local textY = y - b1 - h/2 - fs
-  -- The EU/t and its arrows: the same size and line as the stored/max EU, or their
-  -- own size (hudEuTFontSize) centred on the bar's height (letters are 7 pixels tall at scale 1)
-  local big, bigY = small, textY
-  if config.hudEuTFontSize then
-    big = config.hudEuTFontSize / 3
-    bigY = y - b1 - h/2 - 3.5*big
-  end
-  -- The time left past the bar: the percentage's size and height, or its own size
-  -- (hudTimeLeftFontSize) centred on the bar's height
-  local timeScale, timeY = fs / 3, y - b1 - h/1.8 - fs
-  if config.hudTimeLeftFontSize then
-    timeScale = config.hudTimeLeftFontSize / 3
-    timeY = y - b1 - h/2 - 3.5*timeScale
+  -- Font sizes are on Minecraft's text scale times 3 (3 = normal size)
+  local fs = config.hudPercentFontSize
+  local valueScale = config.hudValueFontSize / 3
+  local eutScale = config.hudEuTFontSize / 3
+  local timeScale = config.hudTimeLeftFontSize / 3
+  -- Top of a text of this scale centred on the bar's height (letters are 7 pixels tall at scale 1)
+  local function centred(scale)
+    return y - b1 - h/2 - 3.5*scale
   end
   local function eutLeft()
-    return 3*h + l/2 - textWidth(eutText, big)/2
+    return 3*h + l/2 - textWidth(eutText, eutScale)/2
   end
   labels = {
     percent = {scale = fs / 3, y = y - b1 - h/1.8 - fs, x = function(text)
@@ -92,22 +84,25 @@ local function defineLabels()
       end
       return b2 + 2*h - 2*fs*(#text - 1)
     end},
-    curr = {scale = small, y = textY, onBar = true, x = function() return b2 + 3.25*h + 1 end},
-    max = {scale = small, y = textY, onBar = true, x = function(text) return 2.25*h + l - 1.5*fs*(#text - 1) end},
+    curr = {scale = valueScale, y = centred(valueScale), onBar = true, x = function() return b2 + 3.25*h + 1 end},
+    -- Right-aligned against the end of the bar
+    max = {scale = valueScale, y = centred(valueScale), onBar = true, x = function(text)
+      return 2.25*h + l + 2 - textWidth(text, valueScale)
+    end},
     -- Centred on the middle of the slanted bar
-    eut = {scale = big, y = bigY, onBar = true, eut = true, x = eutLeft},
+    eut = {scale = eutScale, y = centred(eutScale), onBar = true, eut = true, x = eutLeft},
     -- After the EU/t while charging, before it while discharging; the number itself
     -- stays put while the arrows grow
-    arrows = {scale = big, y = bigY, onBar = true, eut = true, x = function(text)
-      local gap = textWidth(' ', big)
+    arrows = {scale = eutScale, y = centred(eutScale), onBar = true, eut = true, x = function(text)
+      local gap = textWidth(' ', eutScale)
       if (lastView and lastView.direction or 0) > 0 then
-        return eutLeft() + textWidth(eutText, big) + gap
+        return eutLeft() + textWidth(eutText, eutScale) + gap
       end
-      return eutLeft() - gap - textWidth(text, big)
+      return eutLeft() - gap - textWidth(text, eutScale)
     end},
     alert = {scale = fs / 3, y = y - b1 - b2 - h - 3*fs, x = function() return b2 end},
-    -- Time to full or empty: just past the bar's end, at the percentage's size and height
-    timeTo = {scale = timeScale, y = timeY, x = function() return 3.5*h + l + b2 + 4 end},
+    -- Time to full or empty: just past the bar's end
+    timeTo = {scale = timeScale, y = centred(timeScale), x = function() return 3.5*h + l + b2 + 4 end},
   }
 end
 

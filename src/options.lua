@@ -63,9 +63,10 @@ local DEFAULTS = {
   hudLength = 168,
   hudBorderBottom = 2,
   hudBorderTop = 2,
-  hudFontSize = 3,
-  hudEuTFontSize = false,
-  hudTimeLeftFontSize = false,
+  hudPercentFontSize = 3,
+  hudValueFontSize = 2.3,
+  hudEuTFontSize = 2.3,
+  hudTimeLeftFontSize = 3,
   hudShapeOpacity = 0.9,
   hudTextOpacity = 1.0,
   lscAddress = false,
@@ -250,19 +251,12 @@ local function check(config)
   boolean(config, 'lowPowerFade')
   number(config, 'historyMinutes', 1)
   oneOf(config, 'barTextStyle', {'split', 'shadow'})
-  for _, key in ipairs({'hudHeight', 'hudLength', 'hudFontSize'}) do
+  for _, key in ipairs({'hudHeight', 'hudLength', 'hudPercentFontSize', 'hudValueFontSize', 'hudEuTFontSize',
+      'hudTimeLeftFontSize'}) do
     number(config, key, 1)
   end
   number(config, 'hudBorderBottom', 0)
   number(config, 'hudBorderTop', 0)
-  if config.hudEuTFontSize ~= false and not (isNumber(config.hudEuTFontSize) and config.hudEuTFontSize >= 1) then
-    problem('hudEuTFontSize', string.format('hudEuTFontSize must be a size of at least 1, or false for the same size as '
-      .. 'the stored/max EU (it is %s)', tostring(config.hudEuTFontSize)))
-  end
-  if config.hudTimeLeftFontSize ~= false and not (isNumber(config.hudTimeLeftFontSize) and config.hudTimeLeftFontSize >= 1) then
-    problem('hudTimeLeftFontSize', string.format('hudTimeLeftFontSize must be a size of at least 1, or false for the '
-      .. "percentage's size (it is %s)", tostring(config.hudTimeLeftFontSize)))
-  end
   number(config, 'hudShapeOpacity', 0, 1)
   number(config, 'hudTextOpacity', 0, 1)
   if config.lscAddress ~= false and type(config.lscAddress) ~= 'string' then

@@ -50,9 +50,10 @@ hudHeight = 12             -- HUD size, in GUI pixels
 hudLength = 168
 hudBorderBottom = 2
 hudBorderTop = 2
-hudFontSize = 3            -- the percentage and alerts
-hudEuTFontSize = false     -- the EU/t and arrows (false = the size of the stored/max EU; 3 = as big as the %)
-hudTimeLeftFontSize = false -- the time left past the bar (false = as big as the %; e.g. 2 = smaller)
+hudPercentFontSize = 3     -- the percentage and alerts (3 = normal text size)
+hudValueFontSize = 2.3     -- stored and max EU on the bar
+hudEuTFontSize = 2.3       -- the EU/t and arrows
+hudTimeLeftFontSize = 3    -- the time left past the bar
 hudShapeOpacity = 0.9      -- 0 to 1
 hudTextOpacity = 1.0       -- 0 to 1
 
