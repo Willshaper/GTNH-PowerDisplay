@@ -46,8 +46,18 @@ local function blocksFound()
   return 'Redstone I/O blocks found: ' .. table.concat(found, ', ')
 end
 
--- Returns nil, or why it can't run and a hint listing the Redstone I/O blocks
+-- Returns nil, or why it can't run and a hint listing the Redstone I/O blocks.
+-- Started again with new settings (after editing config.lua), the generators keep
+-- their state if the block, side and signal are the same; otherwise the old output
+-- is first set so that the generators run.
 function generators.start(cfg)
+  local previous = config
+  local wasRunning = running
+  local same = previous ~= nil and redstone ~= nil and previous.generatorControl == cfg.generatorControl
+    and previous.generatorSide == cfg.generatorSide and previous.generatorSignal == cfg.generatorSignal
+  if previous ~= nil and redstone ~= nil and not same then
+    pcall(output, true)
+  end
   config = cfg
   running = nil
   redstone = nil
@@ -64,6 +74,9 @@ function generators.start(cfg)
   end
   redstone = component.proxy(address)
   side = sides[config.generatorSide]
+  if same then
+    running = wasRunning
+  end
   return nil
 end
 

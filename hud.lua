@@ -1,8 +1,9 @@
 -- Power Display: shows the LSC's charge on AR glasses and on the computer's screen.
--- Run it with: hud      Stop it with C (or Ctrl+Alt+C).
+-- Run it with: hud      Stop it with C (or Ctrl+Alt+C), edit the settings with S.
 local computer = require('computer')
 local event = require('event')
 local shell = require('shell')
+local term = require('term')
 
 -- OpenOS keeps loaded modules until reboot; forget ours so an update takes effect
 -- and nothing is left over from a previous run
@@ -33,13 +34,18 @@ if not config then
   return
 end
 
-local function stopRequested(char)
-  return char == 99 or char == 67 -- c or C
+-- C stops the program, S edits config.lua
+local function keyAction(char)
+  if char == 99 or char == 67 then
+    return 'stop'
+  elseif char == 115 or char == 83 then
+    return 'edit'
+  end
 end
 
--- Waits up to `seconds`, returning true as soon as C is pressed. With `frame`,
--- calls frame(uptime) every FRAME_SECONDS meanwhile (arrows and blinking).
--- Ctrl+Alt+C raises "interrupted" from event.pull, which ends the program.
+-- Waits up to `seconds`. Returns 'stop' or 'edit' as soon as C or S is pressed.
+-- With `frame`, calls frame(uptime) every FRAME_SECONDS meanwhile (arrows and
+-- blinking). Ctrl+Alt+C raises "interrupted" from event.pull, which ends the program.
 local function wait(seconds, frame)
   local deadline = computer.uptime() + seconds
   repeat
@@ -48,14 +54,15 @@ local function wait(seconds, frame)
       timeout = math.min(timeout, FRAME_SECONDS)
     end
     local name, _, char = event.pull(timeout, 'key_down')
-    if name == 'key_down' and stopRequested(char) then
-      return true
+    local action = name == 'key_down' and keyAction(char)
+    if action then
+      return action
     end
     if frame then
       frame(computer.uptime())
     end
   until computer.uptime() >= deadline
-  return false
+  return nil
 end
 
 -- Shows a message on the screen, or prints it once if there is no screen
@@ -72,10 +79,12 @@ local function message(title, lines, color)
   end
 end
 
-local notes = {} -- shown in the screen's footer, e.g. when no glasses terminal is connected
+local notes -- shown in the screen's footer, e.g. when no glasses terminal is connected
 local generatorProblem, generatorHint -- why generator control can't run, shown on the screen
+local editProblems -- mistakes in a config.lua just edited with S (the previous settings stay)
 
--- Finds the LSC, waiting until it can be read. Returns the proxy, or nil if C was pressed.
+-- Finds the LSC, waiting until it can be read. Returns the proxy, or nil and 'stop'
+-- or 'edit' when C or S was pressed.
 local function waitForLSC()
   while true do
     local machine, seen = lsc.find(config.lscAddress)
@@ -96,8 +105,9 @@ local function waitForLSC()
     end
     message('Waiting for the LSC...', {hint})
     link.sendStatus('The Power Display computer is waiting for the LSC.', hint)
-    if wait(RETRY_SECONDS) then
-      return nil
+    local action = wait(RETRY_SECONDS)
+    if action then
+      return nil, action
     end
   end
 end
@@ -107,7 +117,8 @@ local function animate(now)
   screen.animate(now)
 end
 
--- Reads and draws until C is pressed (returns) or something fails (raises an error)
+-- Reads and draws until C or S is pressed (returns 'stop' or 'edit') or something
+-- fails (raises an error)
 local function run(machine)
   local average = lsc.newAverage(config.euTAverage)
   -- "Full in" / "Empty in" uses its own, longer average and changes only every
@@ -152,13 +163,17 @@ local function run(machine)
     screen.addSample(now, data.percent)
     screen.update(data, view)
 
-    if wait(config.updateEvery, animate) then
-      return
+    local action = wait(config.updateEvery, animate)
+    if action then
+      return action
     end
   end
 end
 
+-- Shows the display with the current settings until C or S is pressed; returns
+-- 'stop' or 'edit'
 local function main()
+  notes = {}
   if config.showHud and hud.start(config) == 0 then
     table.insert(notes, 'No glasses terminal found')
   end
@@ -180,16 +195,33 @@ local function main()
     print(generatorHint)
   end
 
+  -- A config.lua edited with S that has a mistake: say so for a while
+  if editProblems then
+    local lines = {}
+    for _, found in ipairs(editProblems) do
+      table.insert(lines, '- ' .. found.text)
+    end
+    table.insert(lines, '')
+    table.insert(lines, 'Press S to fix it: Power Display will not start with it next time.')
+    editProblems = nil
+    hud.notice('config.lua has a mistake (see the screen)')
+    message('config.lua has a mistake, so the previous settings are still used', lines, 0xFF5555)
+    local action = wait(8)
+    if action then
+      return action
+    end
+  end
+
   -- Anything other than C / Ctrl+Alt+C is shown and retried, so one bad read
   -- (the adapter unloaded, the LSC rebuilt) doesn't stop the display.
   while true do
-    local machine = waitForLSC()
+    local machine, action = waitForLSC()
     if not machine then
-      return
+      return action
     end
     local ok, err = pcall(run, machine)
     if ok then
-      return
+      return err -- 'stop' or 'edit'
     end
     if err == 'interrupted' then
       error(err, 0)
@@ -198,13 +230,37 @@ local function main()
     hud.notice('Power Display error, retrying...')
     message('Something went wrong, retrying in ' .. RETRY_SECONDS .. 's', {tostring(err)}, 0xFF5555)
     link.sendStatus('The Power Display computer had an error and is retrying.', tostring(err))
-    if wait(RETRY_SECONDS) then
-      return
+    local action = wait(RETRY_SECONDS)
+    if action then
+      return action
     end
   end
 end
 
-local ok, err = xpcall(main, function(msg)
+-- S: edits config.lua in OpenOS's editor, then reads it again. The new settings are
+-- used if they have no mistakes; otherwise the previous ones stay and main says so.
+local function editConfig()
+  hud.notice('Editing config.lua...')
+  link.sendStatus("The Power Display computer's settings are being edited.", 'It continues when they are saved.')
+  screen.stop()
+  shell.execute('edit "' .. configPath .. '"')
+  term.setCursorBlink(false) -- edit turns the blinking cursor back on
+  local newConfig, found = options.load(configPath)
+  if newConfig then
+    config = newConfig
+  else
+    editProblems = found
+  end
+  hud.stop() -- drawn again with the settings now in use
+end
+
+local function program()
+  while main() == 'edit' do
+    editConfig()
+  end
+end
+
+local ok, err = xpcall(program, function(msg)
   if msg == 'interrupted' then
     return msg
   end

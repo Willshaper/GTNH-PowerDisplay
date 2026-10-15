@@ -1,4 +1,5 @@
--- Power Display settings. Restart hud after changing anything.
+-- Power Display settings. Press S in hud to edit them: the changes are used as soon as
+-- you save (Ctrl+S) and close the editor (Ctrl+W).
 -- One setting per line. A setting you leave out uses its default.
 
 -- What the HUD on your AR glasses shows. Use any of these words, in any order:

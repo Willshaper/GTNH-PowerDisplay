@@ -1,4 +1,5 @@
--- Power Display (HUD only) settings. Restart hudonly after changing anything.
+-- Power Display (HUD only) settings. Press S in hudonly to edit them: the changes are used
+-- as soon as you save (Ctrl+S) and close the editor (Ctrl+W).
 -- One setting per line. A setting you leave out uses its default.
 
 -- What the HUD on your AR glasses shows. Use any of these words, in any order:

@@ -17,6 +17,7 @@ This is a fork of [DylanTaylor1/GTNH-PowerDisplay](https://github.com/DylanTaylo
 - **Starts by itself:** auto-start on boot, and wake on redstone so a redstone clock turns the computer back on after a power loss.
 - **Keeps running:** waits for the LSC at boot, and recovers by itself if a read fails (for example while the chunk reloads).
 - **Simple settings file:** one setting per line with no commas to forget, word lists for what the HUD and the screen show, colours by name, and rarely used settings in an Advanced section.
+- **Edit while it runs:** press S to change the settings; they apply as soon as you save.
 - **Clear config errors:** a mistake in `config.lua` is explained in plain words, naming the setting, instead of a Lua error.
 - **Updates keep your settings:** the installer carries your values into a newer `config.lua`.
 - **Maintenance warning fixed:** newer GregTech versions send the LSC's sensor lines in a different form, which silently broke the original "Has Problems!" check.
@@ -64,13 +65,13 @@ To use the MFU upgrade, sneak right-click the LSC controller before placing it i
 
 # Running the Program
 
-Enter `hud`. It runs until you press C (or Ctrl+Alt+C). Restart it after changing `config.lua`.
+Enter `hud`. It runs until you press C (or Ctrl+Alt+C). Press S to change the settings while it runs: `config.lua` opens in the editor, and the new settings are used as soon as you save (Ctrl+S) and close it (Ctrl+W). If the file has a mistake, the previous settings stay in use and the screen says what is wrong. The viewer (`viewer`) and the HUD on its own (`hudonly`) work the same way.
 
 To update, run the `wget` line above again. If there is a newer `config.lua`, it shows what changed and asks whether to switch to it. Your values are carried over, settings the chosen install doesn't use are left out, and a value the new version no longer accepts goes back to its default (each of these is listed). The old file is kept as `config.old.lua`. If you say no, your file stays and the new one is saved as `config.default.lua`.
 
 ## Settings
 
-`config.lua` has one setting per line, like `hudCorner = "right"`. A setting you leave out uses its default. Text goes in quotes. Restart the program after a change. A mistake is reported with the setting's name when the program starts.
+`config.lua` has one setting per line, like `hudCorner = "right"`. A setting you leave out uses its default. Text goes in quotes. Press S in the running program to edit it, or edit it with `edit config.lua` and restart the program. A mistake is reported with the setting's name.
 
 ### What to show
 

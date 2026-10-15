@@ -528,7 +528,7 @@ function screen.update(data, view)
   if #alerts > 0 then
     row(footer, alerts)
   else
-    local text = ' Press C to stop.  Updates every ' .. config.updateEvery .. 's.'
+    local text = ' C stops, S edits settings.  Updates every ' .. config.updateEvery .. 's.'
     for _, note in ipairs(view.notes or {}) do
       text = text .. '  ' .. note .. '.'
     end

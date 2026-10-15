@@ -1,11 +1,12 @@
 -- Power Display viewer: shows the display of a Power Display computer somewhere else,
 -- received through a linked card. That computer needs linkedCard = true in its
 -- config.lua and the other card of the pair.
--- Run it with: viewer      Stop it with C (or Ctrl+Alt+C).
+-- Run it with: viewer      Stop it with C (or Ctrl+Alt+C), edit the settings with S.
 local component = require('component')
 local computer = require('computer')
 local event = require('event')
 local shell = require('shell')
+local term = require('term')
 
 -- OpenOS keeps loaded modules until reboot; forget ours so an update takes effect
 for _, name in ipairs({'src.format', 'src.options', 'src.lsc', 'src.glasses', 'src.screen', 'src.generators', 'src.link'}) do
@@ -38,9 +39,16 @@ if not component.isAvailable('tunnel') then
   return
 end
 
-local function stopRequested(char)
-  return char == 99 or char == 67 -- c or C
+-- C stops the program, S edits config.lua
+local function keyAction(char)
+  if char == 99 or char == 67 then
+    return 'stop'
+  elseif char == 115 or char == 83 then
+    return 'edit'
+  end
 end
+
+local editProblems -- mistakes in a config.lua just edited with S (the previous settings stay)
 
 -- Shows a message on the screen, or prints it once if there is no screen
 local lastPrinted
@@ -64,6 +72,8 @@ local function applySender(sender)
   end
 end
 
+-- Shows the display with the current settings until C or S is pressed; returns
+-- 'stop' or 'edit'
 local function main()
   -- Glasses are optional here; with none connected, the HUD is just left out
   if config.showHud then
@@ -71,6 +81,27 @@ local function main()
   end
   if config.showScreen and not screen.start(config) then
     print('No screen or graphics card found; showing the HUD only.')
+  end
+
+  -- A config.lua edited with S that has a mistake: say so for a while
+  if editProblems then
+    local lines = {}
+    for _, found in ipairs(editProblems) do
+      table.insert(lines, '- ' .. found.text)
+    end
+    table.insert(lines, '')
+    table.insert(lines, 'Press S to fix it: the viewer will not start with it next time.')
+    editProblems = nil
+    hud.notice('config.lua has a mistake (see the screen)')
+    message('config.lua has a mistake, so the previous settings are still used', lines, 0xFF5555)
+    local deadline = computer.uptime() + 8
+    repeat
+      local name, _, char = event.pull(math.max(0, deadline - computer.uptime()), 'key_down')
+      local action = name == 'key_down' and keyAction(char)
+      if action then
+        return action
+      end
+    until computer.uptime() >= deadline
   end
 
   local waitingText = {'Nothing received yet. On the Power Display computer, set linkedCard = true',
@@ -84,8 +115,9 @@ local function main()
   while true do
     local name, a, b, c, d, e = event.pull(FRAME_SECONDS)
     local now = computer.uptime()
-    if name == 'key_down' and stopRequested(b) then
-      return
+    local action = name == 'key_down' and keyAction(b)
+    if action then
+      return action
     end
 
     if name == 'modem_message' then
@@ -132,7 +164,29 @@ local function main()
   end
 end
 
-local ok, err = xpcall(main, function(msg)
+-- S: edits config.lua in OpenOS's editor, then reads it again. The new settings are
+-- used if they have no mistakes; otherwise the previous ones stay and main says so.
+local function editConfig()
+  hud.notice('Editing config.lua...')
+  screen.stop()
+  shell.execute('edit "' .. configPath .. '"')
+  term.setCursorBlink(false) -- edit turns the blinking cursor back on
+  local newConfig, found = options.load(configPath)
+  if newConfig then
+    config = newConfig
+  else
+    editProblems = found
+  end
+  hud.stop() -- drawn again with the settings now in use
+end
+
+local function program()
+  while main() == 'edit' do
+    editConfig()
+  end
+end
+
+local ok, err = xpcall(program, function(msg)
   if msg == 'interrupted' then
     return msg
   end

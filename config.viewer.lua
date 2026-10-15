@@ -1,6 +1,7 @@
 -- Power Display viewer settings: how this computer shows the display it receives through
 -- its linked card. The values (EU/t, time left, generators) come from the Power Display
--- computer. Restart viewer after changing anything.
+-- computer. Press S in viewer to edit them: the changes are used as soon as you save
+-- (Ctrl+S) and close the editor (Ctrl+W).
 -- One setting per line. A setting you leave out uses its default.
 
 -- What the HUD on your AR glasses shows. Use any of these words, in any order:
