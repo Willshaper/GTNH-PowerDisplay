@@ -81,6 +81,24 @@ function format.arrows(direction, now)
   return string.rep(direction > 0 and '>' or '<', count)
 end
 
+-- Seconds -> "45s", "52min", "2h 05min", "3d 04h", "12y" (minutes rounded), for the HUD
+function format.shortDuration(seconds)
+  seconds = math.floor(seconds + 0.5)
+  if seconds < 60 then
+    return seconds .. 's'
+  end
+  local minutes = math.floor(seconds / 60 + 0.5)
+  if minutes < 60 then
+    return minutes .. 'min'
+  elseif minutes < 1440 then
+    return string.format('%dh %02dmin', minutes // 60, minutes % 60)
+  elseif seconds < 31536000 then
+    local hours = math.floor(seconds / 3600 + 0.5)
+    return string.format('%dd %02dh', hours // 24, hours % 24)
+  end
+  return string.format('%dy', seconds // 31536000)
+end
+
 function format.percent(fraction)
   if fraction > 0.999 then
     return '100%'

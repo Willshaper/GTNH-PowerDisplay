@@ -96,9 +96,11 @@ To update, run the `wget` line above again. It asks whether to replace your `con
 | `generatorSide` | `'north'` | Side of the Redstone I/O block the signal comes out of: `north`, `south`, `east`, `west`, `top` or `bottom`. |
 | `generatorOnBelow`, `generatorOffAbove` | `20`, `90` | Start the generators below the first percentage, stop them above the second. |
 | `generatorSignal` | `'stop'` | `'stop'`: a signal means stop. `'run'`: a signal means run. |
-| `showTimeToFullOrEmpty` | `true` | "Full in" / "Empty in" on the screen. |
-| `timeToFullOrEmptyAverage` | `30` | "Full in" / "Empty in" is worked out from the average EU/t over this many seconds. |
-| `timeToFullOrEmptyUpdate` | `5` | How often, in seconds, "Full in" / "Empty in" changes. |
+| `showTimeToFullOrEmptyOnScreen` | `true` | "Full in" / "Empty in" under the screen's bar. |
+| `showTimeToFullOrEmptyOnHud` | `false` | "Full: 52min" / "Empty: 2h 05min" just past the end of the HUD bar (before it on the right-side HUD). |
+| `timeToFullOrEmptyAverage` | `30` | The time to full or empty is worked out from the average EU/t over this many seconds (HUD and screen). |
+| `timeToFullOrEmptyUpdateOnScreen` | `5` | How often, in seconds, the time to full or empty on the screen changes. On the HUD it changes together with the EU/t. |
+| `timeToFullOrEmptyColor` | `colors.offWhite` | Colour of the time to full or empty next to the HUD bar. |
 | `showAverages` | `true` | GregTech's In/Out/Net averages (5 s, 5 min, 1 hour) on the screen. |
 | `showHistory` | `true` | Show the history graph on the screen. |
 | `historyMinutes` | `30` | How much time the screen's history graph covers. |

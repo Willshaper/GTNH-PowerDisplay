@@ -102,10 +102,14 @@ end
 local function run(machine)
   status('Showing the LSC on the HUD. Press C to stop.')
   local average = lsc.newAverage(config.euTAverage)
+  -- Time to full or empty: its own, longer average, worked out on every update
+  -- together with the EU/t
+  local timeAverage = lsc.newAverage(config.timeToFullOrEmptyAverage)
   while true do
     local data = lsc.read(machine, config)
     local now = computer.uptime()
     average.add(now, data.stored)
+    timeAverage.add(now, data.stored)
 
     local view = {eut = average.value(), direction = 0}
     if view.eut and view.eut >= 1 then
@@ -114,6 +118,7 @@ local function run(machine)
       view.direction = -1
     end
     view.lowPower = config.lowPowerAlert ~= false and data.percent * 100 < config.lowPowerAlert
+    view.hudTimeTo, view.hudTimeToWhat = lsc.timeTo(data, timeAverage.value())
 
     hud.update(data, view)
     hud.animate(now)

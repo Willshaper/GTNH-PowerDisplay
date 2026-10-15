@@ -12,7 +12,7 @@ local cards = {}
 -- show) comes from the viewer's own config.lua.
 local DATA_FIELDS = {'stored', 'capacity', 'percent', 'maintenanceOk', 'passiveLoss',
   'avgIn', 'avgOut', 'avgIn5m', 'avgOut5m', 'avgIn1h', 'avgOut1h'}
-local VIEW_FIELDS = {'eut', 'direction', 'timeTo', 'timeToWhat', 'timeRate',
+local VIEW_FIELDS = {'eut', 'direction', 'timeTo', 'timeToWhat', 'timeRate', 'hudTimeTo', 'hudTimeToWhat',
   'generators', 'generatorProblem', 'generatorHint'}
 local CONFIG_FIELDS = {'wirelessMode', 'generatorControl', 'generatorOnBelow', 'generatorOffAbove',
   'generatorSide', 'sleep'}

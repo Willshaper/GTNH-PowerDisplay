@@ -111,7 +111,8 @@ end
 local function run(machine)
   local average = lsc.newAverage(config.euTAverage)
   -- "Full in" / "Empty in" uses its own, longer average and changes only every
-  -- timeToFullOrEmptyUpdate seconds, so it doesn't jump around
+  -- timeToFullOrEmptyUpdateOnScreen seconds on the screen, so it doesn't jump around.
+  -- The HUD shows it on every update, together with the EU/t.
   local timeAverage = lsc.newAverage(config.timeToFullOrEmptyAverage)
   local timeTo, timeToWhat, timeRate
   local nextTimeTo = 0
@@ -133,10 +134,11 @@ local function run(machine)
       timeRate = timeAverage.value()
       timeTo, timeToWhat = lsc.timeTo(data, timeRate)
       if timeRate then
-        nextTimeTo = now + config.timeToFullOrEmptyUpdate
+        nextTimeTo = now + config.timeToFullOrEmptyUpdateOnScreen
       end
     end
     view.timeTo, view.timeToWhat, view.timeRate = timeTo, timeToWhat, timeRate
+    view.hudTimeTo, view.hudTimeToWhat = lsc.timeTo(data, timeAverage.value())
     view.lowPower = config.lowPowerAlert ~= false and data.percent * 100 < config.lowPowerAlert
 
     generators.update(data.percent)

@@ -123,7 +123,7 @@ end
 
 local function download(file, target)
   filesystem.remove(temp(target))
-  shell.execute(string.format('wget -fq %s%s/%s %s', repo, ref, file, temp(target)))
+  shell.execute(string.format('wget -fq %s%s/%s "%s"', repo, ref, file, temp(target)))
   return filesystem.exists(temp(target)) and filesystem.size(temp(target)) > 0
 end
 

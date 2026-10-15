@@ -87,11 +87,16 @@ return {
   barTextStyle = 'split',
   euTColor = false,     -- one fixed colour for the EU/t text and arrows; false follows barTextStyle
   issueColor = colors.red,
+  timeToFullOrEmptyColor = colors.offWhite, -- the time to full or empty next to the HUD bar
   borderColor = colors.darkGray,
 
   -- Low power alert: the bar turns red below this percentage (false turns it off)
   lowPowerAlert = 20,
   lowPowerBlink = true,
+
+  -- Time to full or empty next to the bar: "Full: 52min", "Empty: 2h 05min"
+  showTimeToFullOrEmptyOnHud = false,
+  timeToFullOrEmptyAverage = 30, -- worked out from the average EU/t over this many seconds
 
   -- Which LSC to read if the computer sees more than one GregTech machine.
   -- false finds it automatically; otherwise the start of its gt_machine address, e.g. 'e190015a'

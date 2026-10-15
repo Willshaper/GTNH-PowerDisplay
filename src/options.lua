@@ -16,9 +16,10 @@ local DEFAULTS = {
   showArrows = true,
   showMaxEU = true,
   showMaintenance = true,
-  showTimeToFullOrEmpty = true,
+  showTimeToFullOrEmptyOnScreen = true,
+  showTimeToFullOrEmptyOnHud = false,
   timeToFullOrEmptyAverage = 30,
-  timeToFullOrEmptyUpdate = 5,
+  timeToFullOrEmptyUpdateOnScreen = 5,
   showAverages = true,
   showEUt = true,
   euTAverage = 5,
@@ -45,6 +46,7 @@ local DEFAULTS = {
   barTextStyle = 'split',
   euTColor = false, -- false: textColor or textColorEmpty, whichever part of the bar it is over
   issueColor = 0xFF0000,
+  timeToFullOrEmptyColor = 0xE6E6E6,
   borderColor = 0x181828,
 
   lowPowerAlert = 20,
@@ -129,7 +131,7 @@ local function check(config)
   end
   number(config, 'GUIscale', 1, 10)
 
-  for _, key in ipairs({'showPercent', 'showMaintenance', 'showTimeToFullOrEmpty', 'showAverages', 'showCurrentEU', 'showArrows', 'showMaxEU', 'showEUt', 'wirelessMode', 'metric', 'lowPowerBlink',
+  for _, key in ipairs({'showPercent', 'showMaintenance', 'showTimeToFullOrEmptyOnScreen', 'showTimeToFullOrEmptyOnHud', 'showAverages', 'showCurrentEU', 'showArrows', 'showMaxEU', 'showEUt', 'wirelessMode', 'metric', 'lowPowerBlink',
       'showPassiveLoss', 'showHistory', 'generatorControl', 'linkedCard'}) do
     boolean(config, key)
   end
@@ -139,7 +141,7 @@ local function check(config)
       tostring(config.euTFontSize)))
   end
   number(config, 'timeToFullOrEmptyAverage', 1)
-  number(config, 'timeToFullOrEmptyUpdate', 1)
+  number(config, 'timeToFullOrEmptyUpdateOnScreen', 1)
   number(config, 'wirelessMax', 1)
 
   for _, key in ipairs({'height', 'length', 'fontSize'}) do
@@ -150,7 +152,8 @@ local function check(config)
   number(config, 'shapeAlpha', 0, 1)
   number(config, 'textAlpha', 0, 1)
 
-  for _, key in ipairs({'primaryColor', 'secondaryColor', 'textColor', 'textColorEmpty', 'issueColor', 'borderColor'}) do
+  for _, key in ipairs({'primaryColor', 'secondaryColor', 'textColor', 'textColorEmpty', 'issueColor', 'borderColor',
+      'timeToFullOrEmptyColor'}) do
     color(config, key)
   end
   color(config, 'euTColor', true)

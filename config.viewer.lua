@@ -89,14 +89,17 @@ return {
   barTextStyle = 'split',
   euTColor = false,     -- one fixed colour for the EU/t text and arrows; false follows barTextStyle
   issueColor = colors.red,
+  timeToFullOrEmptyColor = colors.offWhite, -- the time to full or empty next to the HUD bar
   borderColor = colors.darkGray,
 
   -- Low power alert: the bar turns red below this percentage (false turns it off)
   lowPowerAlert = 20,
   lowPowerBlink = true,
 
-  -- Screen: "Full in 5m 26s" / "Empty in 2h 03m" under the bar
-  showTimeToFullOrEmpty = true,
+  -- Time to full or empty: "Full in 5m 26s" under the screen's bar, "Full: 5min" next to
+  -- the HUD bar
+  showTimeToFullOrEmptyOnScreen = true,
+  showTimeToFullOrEmptyOnHud = false,
   -- Screen: GregTech's own In/Out/Net averages over 5 s, 5 min and 1 hour
   showAverages = true,
   -- Screen: a graph of the charge over the last historyMinutes minutes

@@ -99,6 +99,8 @@ local function defineLabels()
       return eutLeft() - gap - textWidth(text, big)
     end},
     alert = {scale = fs / 3, y = y - b1 - b2 - h - 3*fs, x = function() return b2 end},
+    -- Time to full or empty: just past the bar's end, at the percentage's size and height
+    timeTo = {scale = fs / 3, y = y - b1 - h/1.8 - fs, x = function() return 3.5*h + l + b2 + 4 end},
   }
 end
 
@@ -223,6 +225,7 @@ local function draw(glasses)
     w[name] = text(glasses, name, config.textColor)
   end
   w.alert = text(glasses, 'alert', config.issueColor)
+  w.timeTo = text(glasses, 'timeTo', config.timeToFullOrEmptyColor)
   return w
 end
 
@@ -279,7 +282,7 @@ function hud.animate(now)
   end
 end
 
--- data: from lsc.read; view: {eut, direction, lowPower}
+-- data: from lsc.read; view: {eut, direction, lowPower, hudTimeTo, hudTimeToWhat}
 function hud.update(data, view)
   lastData, lastView = data, view
 
@@ -298,6 +301,18 @@ function hud.update(data, view)
 
   local percentColor = view.lowPower and config.issueColor or config.primaryColor
 
+  -- "Full: 52min" / "Empty: 2h 05min"; nothing while steady or still measuring
+  local timeToText = ''
+  if config.showTimeToFullOrEmptyOnHud then
+    if data.percent >= 0.9995 and (view.eut or 0) >= 0 then
+      timeToText = 'Full'
+    elseif data.percent <= 0.0005 and (view.eut or 0) <= 0 then
+      timeToText = 'Empty'
+    elseif view.hudTimeTo then
+      timeToText = (view.hudTimeToWhat == 'full' and 'Full: ' or 'Empty: ') .. format.shortDuration(view.hudTimeTo)
+    end
+  end
+
   for _, t in ipairs(terminals) do
     local w = t.widgets
     local fill = l * data.percent
@@ -313,6 +328,7 @@ function hud.update(data, view)
     setLabel(t, 'max', config.showMaxEU and format.eu(data.capacity, config.metric) or '')
     setLabel(t, 'eut', eutText)
     setLabel(t, 'alert', table.concat(alerts, '  '))
+    setLabel(t, 'timeTo', timeToText)
   end
 end
 
