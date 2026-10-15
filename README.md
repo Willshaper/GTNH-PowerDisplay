@@ -4,7 +4,7 @@ An OpenComputers (OC) program for GT New Horizons that shows your Lapotronic Sup
 
 This is a fork of [DylanTaylor1/GTNH-PowerDisplay](https://github.com/DylanTaylor1/GTNH-PowerDisplay). The HUD keeps the original's design.
 
-![FoxHUD](media/FoxHUD.png?)
+![HUD](media/HUD.png)
 
 ## What's new in this fork
 
@@ -139,10 +139,10 @@ A colour is a name in quotes, from the list at the end of `config.lua` (e.g. `"e
 | `euTAverage` | `5` | The EU/t is the average over this many seconds. |
 | `timeLeftAverage` | `30` | The time left is worked out from the average over this many seconds. |
 | `timeLeftUpdateOnScreen` | `5` | The screen's time left changes every this many seconds. On the HUD it changes together with the EU/t. |
-| `updateEvery` | `1` | Seconds between updates. |
+| `updateEvery` | `2` | Seconds between updates. |
 | `lowPowerBlink` | `true` | The low power bar blinks. |
 | `historyMinutes` | `30` | Minutes the screen's History graph covers. |
-| `barTextStyle` | `"split"` | Text on the HUD bar: `"split"` = dark over the fill and light over the rest, letter by letter; `"shadow"` = light with a dark shadow. Use `"shadow"` if `"split"` leaves small gaps or overlaps (possible with resource-pack fonts). |
+| `barTextStyle` | `"shadow"` | Text on the HUD bar: `"shadow"` = light with a dark shadow, readable on both parts of the bar whatever the font; `"split"` = dark over the fill and light over the rest, letter by letter (can leave small gaps or overlaps with resource-pack fonts). |
 | `hudHeight`, `hudLength`, `hudBorderBottom`, `hudBorderTop` | `12`, `168`, `2`, `2` | HUD size, in GUI pixels. |
 | `hudFontSize` | `3` | Size of the percentage, alerts and time left. |
 | `hudEuTFontSize` | `false` | Size of the EU/t and arrows. `false`: the size of the stored/max EU; `3`: as big as the percentage. |

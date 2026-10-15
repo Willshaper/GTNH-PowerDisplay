@@ -44,8 +44,8 @@ euTColor = false                  -- one fixed colour for the EU/t and arrows (f
 numberFormat = "metric"    -- "metric" = 4.4G, "scientific" = 4.42e9
 lowPowerBlink = true       -- the low power bar blinks
 historyMinutes = 30        -- minutes the screen's History graph covers
-barTextStyle = "split"     -- HUD text on the bar: "split" = dark over the fill, light over the rest,
-                           -- letter by letter; "shadow" = light with a dark shadow (for resource-pack fonts)
+barTextStyle = "shadow"    -- HUD text on the bar: "shadow" = light with a dark shadow; "split" = dark over
+                           -- the fill, light over the rest, letter by letter (gaps possible with resource-pack fonts)
 hudHeight = 12             -- HUD size, in GUI pixels
 hudLength = 168
 hudBorderBottom = 2
