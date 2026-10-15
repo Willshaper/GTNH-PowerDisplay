@@ -36,7 +36,7 @@ wireless = false           -- show the wireless network's EU instead: the amount
 euTAverage = 5             -- the EU/t is the average over this many seconds
 timeLeftAverage = 30       -- the time left is worked out from the average over this many seconds
 updateEvery = 2            -- seconds between updates
-lowPowerBlink = true       -- the low power bar blinks
+lowPowerFade = true        -- the low power HUD bar fades to alertColor and back (false = steady)
 barTextStyle = "shadow"    -- text on the bar: "shadow" = light with a dark shadow; "split" = dark over
                            -- the fill, light over the rest, letter by letter (gaps possible with resource-pack fonts)
 hudHeight = 12             -- HUD size, in GUI pixels

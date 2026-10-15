@@ -19,7 +19,7 @@ local generators = require('src.generators')
 local link = require('src.link')
 
 local RETRY_SECONDS = 5
-local FRAME_SECONDS = 0.1 -- animation frames between updates (arrows, blinking)
+local FRAME_SECONDS = 0.1 -- animation frames between updates (arrows, low power fade)
 
 -- config.lua is found the same way require would find it, and read fresh every start
 local configPath = package.searchpath('config', package.path)
@@ -45,7 +45,7 @@ end
 
 -- Waits up to `seconds`. Returns 'stop' or 'edit' as soon as C or S is pressed.
 -- With `frame`, calls frame(uptime) every FRAME_SECONDS meanwhile (arrows and
--- blinking). Ctrl+Alt+C raises "interrupted" from event.pull, which ends the program.
+-- low power fade). Ctrl+Alt+C raises "interrupted" from event.pull, which ends the program.
 local function wait(seconds, frame)
   local deadline = computer.uptime() + seconds
   repeat

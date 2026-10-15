@@ -10,7 +10,7 @@ This is a fork of [DylanTaylor1/GTNH-PowerDisplay](https://github.com/DylanTaylo
 
 - **Screen monitor:** a framed charge bar in the HUD's colours with the percentage and net EU/t with arrows on it, stored and max EU, time until full or empty, GregTech's own in/out averages (5 s, 5 min, 1 h), passive loss, generator state and a history graph.
 - **EU/t on the HUD:** net EU/t in the middle of the bar, averaged over the number of seconds you choose.
-- **Low power alert:** below a percentage you set, the bar turns red and blinks, and "Low power!" shows above it.
+- **Low power alert:** below a percentage you set, the HUD bar slowly fades to red and back, the screen's bar turns red, and "Low power!" shows above it.
 - **Charge arrows:** animated `>` `>>` `>>>` after the EU/t while charging, `<<<` before it while discharging.
 - **Readable text:** text on the bar is dark over the filled part and light over the empty part, letter by letter.
 - **Generator control (optional):** a redstone signal that starts your generators below one percentage and stops them above another.
@@ -95,7 +95,7 @@ To update, run the `wget` line above again. If there is a newer `config.lua`, it
 | `hud` | `"Percent Stored EUt Arrows Max Maintenance"` | What the HUD shows. |
 | `screen` | all ten words | What the computer's screen shows. |
 | `hudCorner` | `"left"` | Bottom corner for the HUD. `"right"` mirrors it: the bar fills leftwards and slants the other way; the text on the bar reads the same. |
-| `lowPower` | `20` | Below this %, the bar turns red (and blinks) and "Low power!" shows. `false` turns it off. |
+| `lowPower` | `20` | Below this %, the bar turns red (fading on the HUD, see `lowPowerFade`) and "Low power!" shows. `false` turns it off. |
 
 ### Your Minecraft window
 
@@ -140,7 +140,7 @@ A colour is a name in quotes, from the list at the end of `config.lua` (e.g. `"e
 | `timeLeftAverage` | `30` | The time left is worked out from the average over this many seconds. |
 | `timeLeftUpdateOnScreen` | `5` | The screen's time left changes every this many seconds. On the HUD it changes together with the EU/t. |
 | `updateEvery` | `2` | Seconds between updates. |
-| `lowPowerBlink` | `true` | The low power bar blinks. |
+| `lowPowerFade` | `true` | While power is low, the HUD bar slowly fades to `alertColor` and back (about every 2 seconds). `false`: steady. The screen's bar is steady red either way. |
 | `historyMinutes` | `30` | Minutes the screen's History graph covers. |
 | `barTextStyle` | `"shadow"` | Text on the HUD bar: `"shadow"` = light with a dark shadow, readable on both parts of the bar whatever the font; `"split"` = dark over the fill and light over the rest, letter by letter (can leave small gaps or overlaps with resource-pack fonts). |
 | `hudHeight`, `hudLength`, `hudBorderBottom`, `hudBorderTop` | `12`, `168`, `2`, `2` | HUD size, in GUI pixels. |

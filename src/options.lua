@@ -56,7 +56,7 @@ local DEFAULTS = {
   timeLeftAverage = 30,
   timeLeftUpdateOnScreen = 5,
   updateEvery = 2,
-  lowPowerBlink = true,
+  lowPowerFade = true,
   historyMinutes = 30,
   barTextStyle = 'shadow',
   hudHeight = 12,
@@ -246,7 +246,7 @@ local function check(config)
   number(config, 'timeLeftAverage', 1)
   number(config, 'timeLeftUpdateOnScreen', 1)
   number(config, 'updateEvery', 0.05)
-  boolean(config, 'lowPowerBlink')
+  boolean(config, 'lowPowerFade')
   number(config, 'historyMinutes', 1)
   oneOf(config, 'barTextStyle', {'split', 'shadow'})
   for _, key in ipairs({'hudHeight', 'hudLength', 'hudFontSize'}) do

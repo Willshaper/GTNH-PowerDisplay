@@ -18,7 +18,7 @@ local hud = require('src.glasses')
 local screen = require('src.screen')
 local link = require('src.link')
 
-local FRAME_SECONDS = 0.1 -- animation frames (arrows, blinking)
+local FRAME_SECONDS = 0.1 -- animation frames (arrows, low power fade)
 local STALE_SECONDS = 10 -- no update for this long (plus 3 update intervals): say so
 
 -- Colours, sizes and what to show come from this computer's config.lua. The values

@@ -248,11 +248,6 @@ function screen.message(title, lines, color)
   return true
 end
 
--- Blinks twice a second, whatever the update interval
-local function blinkPhase(now)
-  return math.floor(now * 2) % 2 == 0
-end
-
 -- Text on the bar's middle line: cell index (0-based across the inside) -> char.
 -- The percentage on the left, the EU/t in the middle with its arrows after it while
 -- charging and before it while discharging, so the number itself doesn't move.
@@ -295,7 +290,7 @@ local function drawBar(now)
   local data, view = lastData, lastView
   local size = width - 4 -- a margin and the frame on each side
   local fillColor = config.barColor
-  if view.lowPower and (not config.lowPowerBlink or blinkPhase(now)) then
+  if view.lowPower then -- steady red: a 16-colour screen can't fade smoothly
     fillColor = config.alertColor
   end
   local emptyColor = config.barEmptyColor
@@ -332,8 +327,8 @@ local function drawBar(now)
   end
 end
 
--- Called several times a second between updates: animates the arrows and blinks the
--- bar. Only the bar is redrawn, and only the lines that changed.
+-- Called several times a second between updates: animates the arrows. Only the bar
+-- is redrawn, and only the lines that changed.
 function screen.animate(now)
   if gpu and barRow and lastData then
     drawBar(now)

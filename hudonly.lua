@@ -15,7 +15,7 @@ local lsc = require('src.lsc')
 local hud = require('src.glasses')
 
 local RETRY_SECONDS = 5
-local FRAME_SECONDS = 0.1 -- animation frames between updates (arrows, blinking)
+local FRAME_SECONDS = 0.1 -- animation frames between updates (arrows, low power fade)
 
 local configPath = package.searchpath('config', package.path)
 configPath = configPath and shell.resolve(configPath) or shell.resolve('config.lua')
@@ -49,7 +49,7 @@ end
 
 -- Waits up to `seconds`. Returns 'stop' or 'edit' as soon as C or S is pressed.
 -- With `frame`, calls frame(uptime) every FRAME_SECONDS meanwhile (arrows and
--- blinking). Ctrl+Alt+C raises "interrupted" from event.pull, which ends the program.
+-- low power fade). Ctrl+Alt+C raises "interrupted" from event.pull, which ends the program.
 local function wait(seconds, frame)
   local deadline = computer.uptime() + seconds
   repeat

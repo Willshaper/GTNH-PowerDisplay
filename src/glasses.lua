@@ -250,8 +250,24 @@ function hud.start(cfg)
   return #terminals
 end
 
-local function blinkPhase(now)
-  return math.floor(now * 2) % 2 == 0
+-- Low power: the bar breathes from its colour to alertColor and back
+local FADE_SECONDS = 2 -- one full cycle
+local FADE_STEPS = 8   -- shades from one colour to the other; only a new shade is sent
+
+local function mix(from, to, amount)
+  local function channel(shift)
+    local a, b = (from >> shift) & 0xFF, (to >> shift) & 0xFF
+    return math.floor(a + (b - a) * amount + 0.5) << shift
+  end
+  return channel(16) | channel(8) | channel(0)
+end
+
+local function lowPowerColor(now)
+  if not config.lowPowerFade then
+    return config.alertColor
+  end
+  local amount = (1 - math.cos(2 * math.pi * now / FADE_SECONDS)) / 2
+  return mix(config.barColor, config.alertColor, math.floor(amount * FADE_STEPS + 0.5) / FADE_STEPS)
 end
 
 -- ">", ">>", ">>>" while charging, "<" ... while discharging, on both sides.
@@ -263,15 +279,15 @@ local function arrowsText(now)
   return format.arrows(lastView.direction, now)
 end
 
--- Called several times a second between updates: animates the arrows and blinks the
--- bar. Only changes are sent.
+-- Called several times a second between updates: animates the arrows and the low
+-- power fade. Only changes are sent.
 function hud.animate(now)
   if not lastData then
     return
   end
   local barColor = config.barColor
-  if lastView.lowPower and (not config.lowPowerBlink or blinkPhase(now)) then
-    barColor = config.alertColor
+  if lastView.lowPower then
+    barColor = lowPowerColor(now)
   end
   local arrows = arrowsText(now)
   for _, t in ipairs(terminals) do
