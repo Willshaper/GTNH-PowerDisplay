@@ -10,10 +10,13 @@ This is a fork of [DylanTaylor1/GTNH-PowerDisplay](https://github.com/DylanTaylo
 
 - **Screen monitor:** a framed charge bar in the HUD's colours with the percentage and net EU/t with arrows on it, stored and max EU, time until full or empty, GregTech's own in/out averages (5 s, 5 min, 1 h), passive loss, generator state and a history graph.
 - **EU/t on the HUD:** net EU/t in the middle of the bar, averaged over the number of seconds you choose.
+- **Time left:** "Full in 52m 00s" on the screen, and optionally "Full: 52min" next to the HUD bar.
 - **Low power alert:** below a percentage you set, the HUD bar slowly fades to red and back, the screen's bar turns red, and "Low power!" shows above it.
 - **Charge arrows:** animated `>` `>>` `>>>` after the EU/t while charging, `<<<` before it while discharging.
-- **Readable text:** text on the bar is dark over the filled part and light over the empty part, letter by letter.
-- **Generator control (optional):** a redstone signal that starts your generators below one percentage and stops them above another.
+- **Readable text:** text on the bar is light with a dark shadow, readable over both the filled and the empty part.
+- **HUD in either corner:** bottom left, or mirrored in the bottom right.
+- **Generator control (optional):** a Redstone I/O block starts your generators below one percentage and stops them above another.
+- **Three installs:** the full Power Display, a viewer that shows it on another computer through a pair of linked cards (even in another dimension), or just the glasses HUD.
 - **Starts by itself:** auto-start on boot, and wake on redstone so a redstone clock turns the computer back on after a power loss.
 - **Keeps running:** waits for the LSC at boot, and recovers by itself if a read fails (for example while the chunk reloads).
 - **Simple settings file:** one setting per line with no commas to forget, word lists for what the HUD and the screen show, colours by name, and rarely used settings in an Advanced section.
@@ -26,7 +29,7 @@ This is a fork of [DylanTaylor1/GTNH-PowerDisplay](https://github.com/DylanTaylo
 
 The following requires EV circuits, epoxid, and titanium (late HV).
 - Tier 3 Computer Case
-- Tier 2 Screen (a tier 3 screen works too)
+- Tier 2 Screen (a tier 3 screen works too; HUD only needs one just to install and set up)
 - Tier 2 Memory
 - Tier 1 Central Processing Unit
 - Tier 2 Graphics Card
@@ -41,6 +44,7 @@ The following requires EV circuits, epoxid, and titanium (late HV).
 - Optional: MFU, so the adapter can reach an LSC up to 16 blocks away
 - Optional: Redstone Card (tier 1 is enough), for wake on redstone
 - Optional: Redstone I/O block, for generator control
+- Optional: a pair of Linked Cards, to show it on another computer
 
 To use the MFU upgrade, sneak right-click the LSC controller before placing it inside the adapter. The LSC controller should highlight green to indicate that the location is set.
 
@@ -59,19 +63,21 @@ To use the MFU upgrade, sneak right-click the LSC controller before placing it i
         wget -f https://raw.githubusercontent.com/Willshaper/GTNH-PowerDisplay/main/setup.lua && setup
 
 8) The installer asks whether to start Power Display when the computer boots, and (with a redstone card) whether a redstone signal should turn the computer on.
-9) Change the settings with `edit config.lua`, especially `windowSize` and `guiScale`, so the HUD lands in the corner.
+9) Set `windowSize` and `guiScale` in the settings, so the HUD lands in the corner: start the program (`hud`) and press S, or run `edit config.lua`.
 
 ![Setup](media/Setup.png?)
 
 # Running the Program
 
-Enter `hud`. It runs until you press C (or Ctrl+Alt+C). Press S to change the settings while it runs: `config.lua` opens in the editor, and the new settings are used as soon as you save (Ctrl+S) and close it (Ctrl+W). If the file has a mistake, the previous settings stay in use and the screen says what is wrong. The viewer (`viewer`) and the HUD on its own (`hudonly`) work the same way.
+Enter `hud`. It runs until you press C (or Ctrl+Alt+C). Press S to change the settings while it runs: `config.lua` opens in the editor, and the new settings are used as soon as you save (Ctrl+S) and close it (Ctrl+W). If the file has a mistake, the previous settings stay in use and the program says what is wrong. The viewer (`viewer`) and the HUD on its own (`hudonly`) work the same way.
 
 To update, run the `wget` line above again. If there is a newer `config.lua`, it shows what changed and asks whether to switch to it. Your values are carried over, settings the chosen install doesn't use are left out, and a value the new version no longer accepts goes back to its default (each of these is listed). The old file is kept as `config.old.lua`. If you say no, your file stays and the new one is saved as `config.default.lua`.
 
 ## Settings
 
 `config.lua` has one setting per line, like `hudCorner = "right"`. A setting you leave out uses its default. Text goes in quotes. Press S in the running program to edit it, or edit it with `edit config.lua` and restart the program. A mistake is reported with the setting's name.
+
+These are the settings of the full Power Display. The viewer's and the HUD only `config.lua` have just the ones they use.
 
 ### What to show
 
@@ -138,7 +144,7 @@ A colour is a name in quotes, from the list at the end of `config.lua` (e.g. `"e
 | `wireless` | `false` | Show the wireless network's EU instead of the LSC's: the amount that counts as 100%, e.g. `1e15` (the network has no maximum). |
 | `euTAverage` | `5` | The EU/t is the average over this many seconds. |
 | `timeLeftAverage` | `30` | The time left is worked out from the average over this many seconds. |
-| `timeLeftUpdateOnScreen` | `5` | The screen's time left changes every this many seconds. On the HUD it changes together with the EU/t. |
+| `timeLeftUpdateOnScreen` | `5` | The screen's time left changes on the first update after this many seconds (every 6 s with updates every 2 s). On the HUD it changes together with the EU/t. |
 | `updateEvery` | `2` | Seconds between updates. |
 | `lowPowerFade` | `true` | While power is low, the HUD bar slowly fades to `alertColor` and back (about every 2 seconds). `false`: steady. The screen's bar is steady red either way. |
 | `historyMinutes` | `30` | Minutes the screen's History graph covers. |
@@ -167,8 +173,8 @@ A Redstone I/O block keeps its last signal when the computer turns off. That is 
 
 A computer that runs out of power switches off and stays off. To have it come back by itself:
 
-1. Answer yes to both installer questions (or add `cd "/home" && hud` to `/home/.shrc`, and set the redstone card's wake threshold to 1 in `lua`).
-2. Put a redstone card in the computer and wire a slow redstone clock (one pulse every 30 to 60 seconds) into it.
+1. Answer yes to both installer questions (or add `cd "/home" && hud` to `/home/.shrc`, with `viewer` or `hudonly` instead of `hud` for those installs, and set the redstone card's wake threshold to 1 in `lua`).
+2. Put a redstone card in the computer and wire a slow redstone clock (one pulse every 30 to 60 seconds) into it. Keep the signal away from the screen: a redstone pulse turns an OpenComputers screen on or off.
 
 Each pulse turns the computer on if it is off; a running computer ignores it. Power Display then starts with it.
 
@@ -183,13 +189,13 @@ A second computer anywhere, even in another dimension, can show the same monitor
 
 The viewer uses its own `config.lua` for colours, sizes and what to show. The values (EU/t, time to full or empty, generator state) come from the Power Display computer. If nothing arrives for a while, the viewer says so.
 
-A tier 3 computer case has three card slots. With a graphics card, internet card and redstone card, the Power Display computer is full; the internet card is only needed to install and update, so it can make room for the linked card.
+A tier 3 computer case has one tier 3 card slot and two tier 2 slots, and the linked card only fits the tier 3 one. Move the graphics card (tier 2) to a tier 2 slot and put the linked card in the tier 3 slot. With a redstone card as well, there is then no room for the internet card: it is only needed to install and update, so swap it in for the redstone card when you update.
 
 Each linked card only talks to its pair, so the Power Display computer sends to every linked card it has: one pair per viewer.
 
 ## HUD only
 
-For just the glasses HUD, without the screen monitor, generator control or linked cards, answer 3 when installing. The computer needs the adapter on the LSC and a glasses terminal, but no screen. It installs only what the HUD needs, with a `config.lua` that has just the HUD and LSC settings. Start it with `hudonly`.
+For just the glasses HUD, without the screen monitor, generator control or linked cards, answer 3 when installing. The computer needs the adapter on the LSC and a glasses terminal; a screen is only needed to install and set it up. It installs only what the HUD needs, with a `config.lua` that has just the HUD and LSC settings. Start it with `hudonly`; its status (waiting for the LSC, mistakes in the settings) shows on the computer's terminal.
 
 ## Multiplayer
 
@@ -198,7 +204,7 @@ Every glasses terminal connected to the computer shows the HUD, so several playe
 ## Other Helpful Commands
 
     ls                       list the files
-    edit config.lua          change the settings
+    edit config.lua          change the settings (or press S in the running program)
     viewer                   show another Power Display computer's display (linked card)
     hudonly                  just the glasses HUD (installed with answer 3)
     uninstall                remove Power Display (asks before removing config.lua)
