@@ -59,7 +59,7 @@ discordMention = ""
 discordLowPower = true          -- below lowPower %, and back to normal
 discordEmptySoon = true         -- empty within discordEmptySoonMinutes
 discordMaintenance = true       -- the LSC needs maintenance, and fixed
-discordLscLost = true           -- no data received for a few minutes
+discordLscLost = true           -- no data received for 2 minutes
 discordGenerators = false       -- generators started and stopped
 discordStarted = true           -- the viewer started
 

@@ -48,7 +48,7 @@ discordMention = ""
 discordLowPower = true          -- below lowPower %, and back to normal
 discordEmptySoon = true         -- empty within discordEmptySoonMinutes
 discordMaintenance = true       -- the LSC needs maintenance, and fixed
-discordLscLost = true           -- the LSC can't be read for a few minutes
+discordLscLost = true           -- the LSC can't be read for 2 minutes
 discordStarted = true           -- Power Display started
 
 -- "Empty soon" is sent when the time left drops below this many minutes

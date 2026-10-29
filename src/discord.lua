@@ -465,9 +465,11 @@ local function clear(kind)
 end
 
 -- Nothing is sent (no webhook, or it doesn't work): forget what was sent, so once it
--- works again everything that is wrong is reported
+-- works again everything that is wrong is reported. "Started" is not sent later,
+-- e.g. when a webhook is added with S long after the start.
 local function forget()
   alerts, lastReport = {}, {}
+  startPending = false
 end
 
 -- Public --------------------------------------------------------------------------
@@ -499,6 +501,9 @@ end)
 discord.configure = guarded(function(config, warning)
   settings = config
   onWarning = warning
+  if config.discordWebhook ~= url then
+    queue = {} -- messages for the old webhook (or none) aren't sent to the new one
+  end
   url = config.discordWebhook
   name = config.discordName
   mention = config.discordMention
@@ -602,7 +607,10 @@ discord.missing = guarded(function(text)
     return
   end
   local embeds = {}
-  if startPending then
+  local long = now - (lastSeen or now) >= LOST_SECONDS
+  -- Usually values come within seconds (the viewer's first one always takes a
+  -- moment), so "started" waits for them, or goes out together with "lost"
+  if startPending and long then
     startPending = false
     if settings.discordStarted then
       embed(embeds, GRAY, texts.started, text)
@@ -610,7 +618,7 @@ discord.missing = guarded(function(text)
   end
   if not settings.discordLscLost then
     alerts.lost = nil
-  elseif now - (lastSeen or now) >= LOST_SECONDS and raise('lost', now) then
+  elseif long and raise('lost', now) then
     embed(embeds, RED, texts.lost, text)
   end
   flush(embeds, now)
