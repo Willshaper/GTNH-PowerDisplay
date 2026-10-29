@@ -6,13 +6,14 @@ local event = require('event')
 local shell = require('shell')
 
 -- OpenOS keeps loaded modules until reboot; forget ours so an update takes effect
-for _, name in ipairs({'src.format', 'src.options', 'src.lsc', 'src.glasses'}) do
+for _, name in ipairs({'src.format', 'src.options', 'src.lsc', 'src.glasses', 'src.discord'}) do
   package.loaded[name] = nil
 end
 
 local options = require('src.options')
 local lsc = require('src.lsc')
 local hud = require('src.glasses')
+local discord = require('src.discord')
 
 local RETRY_SECONDS = 5
 local FRAME_SECONDS = 0.1 -- animation frames between updates (arrows, low power fade)
@@ -109,6 +110,7 @@ local function waitForLSC()
     else
       status('Waiting for the LSC: place an adapter touching its controller, and connect it to this computer with cable.')
     end
+    discord.missing(lastPrinted)
     local action = wait(RETRY_SECONDS)
     if action then
       return nil, action
@@ -138,6 +140,7 @@ local function run(machine)
     end
     view.lowPower = config.lowPower ~= false and data.percent * 100 < config.lowPower
     view.hudTimeTo, view.hudTimeToWhat = lsc.timeTo(data, timeAverage.value())
+    discord.update(data, view)
 
     hud.update(data, view)
     hud.animate(now)
@@ -150,6 +153,7 @@ end
 
 -- Shows the HUD with the current settings until C or S is pressed; returns 'stop' or 'edit'
 local function main()
+  discord.configure(config, print)
   local action = waitForGlasses()
   if action then
     return action
@@ -171,6 +175,7 @@ local function main()
     end
     hud.notice('Power Display error, retrying...')
     status('Something went wrong, retrying in ' .. RETRY_SECONDS .. 's: ' .. tostring(err))
+    discord.missing('Error: ' .. tostring(err))
     action = wait(RETRY_SECONDS)
     if action then
       return action
@@ -199,6 +204,8 @@ local function editConfig()
 end
 
 local function program()
+  discord.started({started = 'Power Display (HUD only) started', lost = "The LSC can't be read",
+    back = 'The LSC can be read again'})
   while main() == 'edit' do
     editConfig()
   end
@@ -212,6 +219,7 @@ local ok, err = xpcall(program, function(msg)
 end)
 
 hud.stop()
+discord.stop()
 
 if not ok and err ~= 'interrupted' then
   io.stderr:write(tostring(err) .. '\n')

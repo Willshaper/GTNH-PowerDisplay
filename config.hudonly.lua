@@ -28,6 +28,35 @@ windowSize = {1920, 1080}
 fullscreen = true
 guiScale = 3
 
+-- DISCORD (optional): messages in a Discord channel -------------------------
+
+-- Needs an internet card in this computer. In Discord: channel settings >
+-- Integrations > Webhooks > New Webhook > Copy Webhook URL.
+
+-- The webhook URL ("" = off). Anyone who can open this computer can read it.
+discordWebhook = ""
+
+-- Shown in each message, e.g. "Main base", to tell computers apart
+discordName = ""
+
+-- Who is pinged on red messages: a user ID like "<@123456789>" or a role
+-- like "<@&123456789>", not a name ("" = nobody). In Discord: Settings >
+-- Advanced > Developer Mode, then right-click the user > Copy User ID.
+discordMention = ""
+
+-- What is sent (true = on, false = off)
+discordLowPower = true          -- below lowPower %, and back to normal
+discordEmptySoon = true         -- empty within discordEmptySoonMinutes
+discordMaintenance = true       -- the LSC needs maintenance, and fixed
+discordLscLost = true           -- the LSC can't be read for a few minutes
+discordStarted = true           -- Power Display started
+
+-- "Empty soon" is sent when the time left drops below this many minutes
+discordEmptySoonMinutes = 30
+
+-- Hours between "still low" reminders while power stays low (0 = none)
+discordReminder = 0
+
 -- COLOURS -------------------------------------------------------------------
 
 -- A name in quotes from the list at the end of this file, or a number

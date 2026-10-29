@@ -9,7 +9,8 @@ local shell = require('shell')
 local term = require('term')
 
 -- OpenOS keeps loaded modules until reboot; forget ours so an update takes effect
-for _, name in ipairs({'src.format', 'src.options', 'src.lsc', 'src.glasses', 'src.screen', 'src.generators', 'src.link'}) do
+for _, name in ipairs({'src.format', 'src.options', 'src.lsc', 'src.glasses', 'src.screen', 'src.generators', 'src.link',
+    'src.discord'}) do
   package.loaded[name] = nil
 end
 
@@ -17,6 +18,7 @@ local options = require('src.options')
 local hud = require('src.glasses')
 local screen = require('src.screen')
 local link = require('src.link')
+local discord = require('src.discord')
 
 local FRAME_SECONDS = 0.1 -- animation frames (arrows, low power fade)
 local STALE_SECONDS = 10 -- no update for this long (plus 3 update intervals): say so
@@ -72,6 +74,14 @@ local function applySender(sender)
   end
 end
 
+-- A problem with sending to Discord: printed if there is no screen (the screen
+-- shows it in its footer)
+local function discordWarning(text)
+  if not screen.active() then
+    print(text)
+  end
+end
+
 -- Shows the display with the current settings until C or S is pressed; returns
 -- 'stop' or 'edit'
 local function main()
@@ -82,6 +92,7 @@ local function main()
   if config.showScreen and not screen.start(config) then
     print('No screen or graphics card found; showing the HUD only.')
   end
+  discord.configure(config, discordWarning)
 
   -- A config.lua edited with S that has a mistake: say so for a while
   if editProblems then
@@ -109,6 +120,7 @@ local function main()
   message('Waiting for the Power Display computer...', waitingText)
 
   local lastReceived -- uptime of the last packet
+  local missing = 'Nothing received since the viewer started.' -- why there are no values, for Discord
   local showingData = false
   local staleShown = false
   local nextFrame = 0
@@ -127,18 +139,21 @@ local function main()
         staleShown = false
         if packet.status then
           showingData = false
+          missing = packet.status .. ' ' .. tostring(packet.text or '')
           hud.notice(packet.status)
           message(packet.status, {packet.text})
         else
           applySender(packet.config)
           local data, view = packet.data, packet.view
           view.remote = true
+          view.discordProblems = discord.problems()
           view.lowPower = config.lowPower ~= false and data.percent * 100 < config.lowPower
           if config.showHud then
             hud.update(data, view)
           end
           screen.addSample(now, data.percent)
           screen.update(data, view)
+          discord.update(data, view)
           showingData = true
         end
       end
@@ -148,10 +163,15 @@ local function main()
     local stale = STALE_SECONDS + 3 * (config.updateEvery or 1)
     if lastReceived and now - lastReceived > stale and not staleShown then
       showingData, staleShown = false, true
+      missing = 'Nothing received for a while. It may be off, or its chunk may not be loaded.'
       hud.notice('No data from the Power Display computer')
       message('No data from the Power Display computer', {
         'Nothing received for ' .. math.floor(now - lastReceived) .. ' seconds. It may be off,',
         'or its chunk may not be loaded.'})
+    end
+
+    if not showingData then
+      discord.missing(missing)
     end
 
     if showingData and now >= nextFrame then
@@ -181,6 +201,8 @@ local function editConfig()
 end
 
 local function program()
+  discord.started({started = 'Viewer started', lost = 'No data from the Power Display computer',
+    back = 'Receiving data from the Power Display computer again'})
   while main() == 'edit' do
     editConfig()
   end
@@ -195,6 +217,7 @@ end)
 
 hud.stop()
 screen.stop()
+discord.stop()
 
 if not ok and err ~= 'interrupted' then
   io.stderr:write(tostring(err) .. '\n')

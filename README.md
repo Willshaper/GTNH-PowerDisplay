@@ -16,13 +16,14 @@ This is a fork of [DylanTaylor1/GTNH-PowerDisplay](https://github.com/DylanTaylo
 - **Readable text:** text on the bar is light with a dark shadow, readable over both the filled and the empty part.
 - **HUD in either corner:** bottom left, or mirrored in the bottom right.
 - **Generator control (optional):** a Redstone I/O block starts your generators below one percentage and stops them above another.
+- **Discord messages (optional):** low power, empty soon, maintenance, the LSC that can't be read, generators started or stopped, and the program starting, each switched on or off with its own setting.
 - **Three installs:** the full Power Display, a viewer that shows it on another computer through a pair of linked cards (even in another dimension), or just the glasses HUD.
 - **Starts by itself:** auto-start on boot, and wake on redstone so a redstone clock turns the computer back on after a power loss.
 - **Keeps running:** waits for the LSC at boot, and recovers by itself if a read fails (for example while the chunk reloads).
 - **Simple settings file:** one setting per line with no commas to forget, word lists for what the HUD and the screen show, colours by name, and rarely used settings in an Advanced section.
 - **Edit while it runs:** press S to change the settings; they apply as soon as you save.
 - **Clear config errors:** a mistake in `config.lua` is explained in plain words, naming the setting, instead of a Lua error.
-- **Updates keep your settings:** the installer carries your values into a newer `config.lua`.
+- **One-command updates:** `update` shows the installed and the newest version and installs it, carrying your values into the newer `config.lua`.
 - **Maintenance warning fixed:** newer GregTech versions send the LSC's sensor lines in a different form, which silently broke the original "Has Problems!" check.
 
 # Components
@@ -34,7 +35,7 @@ The following requires EV circuits, epoxid, and titanium (late HV).
 - Tier 1 Central Processing Unit
 - Tier 2 Graphics Card
 - Tier 1 Hard Disk Drive
-- Internet Card
+- Internet Card (to install and update, and for Discord messages)
 - Adapter
 - Keyboard
 - EEPROM (Lua BIOS)
@@ -71,7 +72,18 @@ To use the MFU upgrade, sneak right-click the LSC controller before placing it i
 
 Enter `hud`. It runs until you press C (or Ctrl+Alt+C). Press S to change the settings while it runs: `config.lua` opens in the editor, and the new settings are used as soon as you save (Ctrl+S) and close it (Ctrl+W). If the file has a mistake, the previous settings stay in use and the program says what is wrong. The viewer (`viewer`) and the HUD on its own (`hudonly`) work the same way.
 
-To update, run the `wget` line above again. If there is a newer `config.lua`, it shows what changed and asks whether to switch to it. Your values are carried over, settings the chosen install doesn't use are left out, and a value the new version no longer accepts goes back to its default (each of these is listed). The old file is kept as `config.old.lua`. If you say no, your file stays and the new one is saved as `config.default.lua`.
+## Updating
+
+Stop the program and enter `update`. It shows the installed version and the newest one on GitHub, with the newest one's description, and asks before installing it:
+
+    Power Display in /home
+    Installed: 149cac0 (2026-10-21)
+    Latest:    a1b2c3d (2026-10-29) Discord notifications
+    Update now? [y/N]
+
+On yes, it runs that version's installer, which asks the usual question (1, 2 or 3). An install from before `update` existed shows "Installed: unknown" once. Running the `wget` line above again does the same without the version check.
+
+If there is a newer `config.lua`, the installer shows what changed and asks whether to switch to it. Your values are carried over, settings the chosen install doesn't use are left out, and a value the new version no longer accepts goes back to its default (each of these is listed). The old file is kept as `config.old.lua`. If you say no, your file stays and the new one is saved as `config.default.lua`.
 
 ## Settings
 
@@ -120,6 +132,22 @@ These are the settings of the full Power Display. The viewer's and the HUD only 
 | `generatorSide` | `"north"` | Side of the block the signal leaves: `north`, `south`, `east`, `west`, `top` or `bottom`. |
 | `generatorSignal` | `"stop"` | `"stop"`: a signal stops them. `"run"`: a signal runs them. |
 | `linkedCard` | `false` | `true` sends the display through the linked card(s), for the viewer on another computer. |
+
+### Discord
+
+| Setting | Default | What it does |
+|---|---|---|
+| `discordWebhook` | `""` | The Discord webhook URL (see Discord messages below). `""` = off. |
+| `discordName` | `""` | Shown in each message, e.g. `"Main base"`, to tell computers apart. |
+| `discordMention` | `""` | Who is pinged on red messages: a user ID like `"<@123456789>"` or a role like `"<@&123456789>"`. `""` = nobody. |
+| `discordLowPower` | `true` | Below `lowPower` %, and back to normal. |
+| `discordEmptySoon` | `true` | Empty within `discordEmptySoonMinutes`. |
+| `discordMaintenance` | `true` | The LSC needs maintenance, and fixed. |
+| `discordLscLost` | `true` | The LSC can't be read for 2 minutes, and readable again. On the viewer: no data received for 2 minutes. |
+| `discordGenerators` | `false` | Generators started and stopped. |
+| `discordStarted` | `true` | The program started. |
+| `discordEmptySoonMinutes` | `30` | "Empty soon" is sent when the time left drops below this many minutes. |
+| `discordReminder` | `0` | Hours between "Still low power" reminders while power stays low. `0` = none. |
 
 ### Colours
 
@@ -189,9 +217,33 @@ A second computer anywhere, even in another dimension, can show the same monitor
 
 The viewer uses its own `config.lua` for colours, sizes and what to show. The values (EU/t, time to full or empty, generator state) come from the Power Display computer. If nothing arrives for a while, the viewer says so.
 
-A tier 3 computer case has one tier 3 card slot and two tier 2 slots, and the linked card only fits the tier 3 one. Move the graphics card (tier 2) to a tier 2 slot and put the linked card in the tier 3 slot. With a redstone card as well, there is then no room for the internet card: it is only needed to install and update, so swap it in for the redstone card when you update.
+A tier 3 computer case has one tier 3 card slot and two tier 2 slots, and the linked card only fits the tier 3 one. Move the graphics card (tier 2) to a tier 2 slot and put the linked card in the tier 3 slot. With a redstone card as well, there is then no room for the internet card: it is only needed to install and update (and for Discord messages), so swap it in for the redstone card when you update.
 
 Each linked card only talks to its pair, so the Power Display computer sends to every linked card it has: one pair per viewer.
+
+## Discord messages
+
+Power Display can post to a Discord channel when something needs your attention. The computer needs an internet card.
+
+1. In Discord, open the channel's settings > Integrations > Webhooks > New Webhook, and Copy Webhook URL.
+2. Set `discordWebhook = "https://discord.com/api/webhooks/..."` in `config.lua` (press S in the running program).
+3. Optionally set `discordName` to tell computers apart, and `discordMention` to be pinged. Discord only pings IDs: turn on Settings > Advanced > Developer Mode, then right-click yourself > Copy User ID, and write it as `"<@123456789>"`.
+
+Each kind of message has its own setting (`discordLowPower = true` and so on, see Settings). The messages:
+
+| Message | Colour | When |
+|---|---|---|
+| Low power | red, pings | The charge drops below `lowPower`. Says the charge, EU/t and time to empty. With `discordReminder`, "Still low power" follows every so many hours. |
+| Power back to normal | green | The charge is 2% above `lowPower` again (so it doesn't flicker at the line). |
+| Empty soon | red, pings | Empty within `discordEmptySoonMinutes` at the current EU/t. |
+| Maintenance needed / fixed | red, pings / green | The LSC has a maintenance problem, and when it is fixed. |
+| The LSC can't be read / can be read again | red, pings / green | Nothing could be read for 2 minutes (not for a short chunk reload). |
+| Generators started / stopped | grey | Generator control switched them. |
+| Power Display started | grey | The program started, with the charge. |
+
+An alert that clears and comes back is sent again at most once every 30 minutes. Messages are sent in the background, so a slow or unreachable Discord never holds up the display. If sending doesn't work (no internet card, a wrong webhook), the screen's bottom line says why (HUD only prints it on the terminal).
+
+The viewer and the HUD only install can send too. The viewer's messages are about what it receives: "No data from the Power Display computer" when nothing arrives for 2 minutes. Set up Discord on one of the two computers, or both get the same messages.
 
 ## HUD only
 
@@ -207,6 +259,7 @@ Every glasses terminal connected to the computer shows the HUD, so several playe
     edit config.lua          change the settings (or press S in the running program)
     viewer                   show another Power Display computer's display (linked card)
     hudonly                  just the glasses HUD (installed with answer 3)
+    update                   install the newest version (stop the program first)
     uninstall                remove Power Display (asks before removing config.lua)
     hud 2>/errors.log        save a long error message, then: edit /errors.log
 

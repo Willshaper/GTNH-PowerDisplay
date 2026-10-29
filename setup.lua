@@ -3,11 +3,18 @@
 -- linked card), or the HUD on its own (connected to the LSC). It asks which.
 --   wget -f https://raw.githubusercontent.com/Willshaper/GTNH-PowerDisplay/main/setup.lua && setup
 -- Optional arguments: setup [branch] [repo raw URL]
+-- update runs it as: setup <commit id> <commit date>
 local shell = require('shell')
 local filesystem = require('filesystem')
 local component = require('component')
 
 local args = {...}
+-- From update: the version to install, already looked up (GitHub allows few lookups per hour)
+local commit, commitDate
+if args[1] and #args[1] == 40 and args[1]:match('^%x+$') then
+  commit, commitDate = args[1], args[2]
+  args = {}
+end
 local branch = args[1] or 'main'
 local repo = args[2] or 'https://raw.githubusercontent.com/Willshaper/GTNH-PowerDisplay/'
 local api = 'https://api.github.com/repos/Willshaper/GTNH-PowerDisplay/commits/'
@@ -19,24 +26,25 @@ local ROLES = {
     program = 'hud',
     name = 'Power Display',
     description = 'Power Display: this computer is connected to the LSC',
-    files = {'hud.lua', 'setup.lua', 'uninstall.lua', 'src/format.lua', 'src/lsc.lua', 'src/options.lua',
-      'src/glasses.lua', 'src/screen.lua', 'src/generators.lua', 'src/link.lua'},
+    files = {'hud.lua', 'setup.lua', 'update.lua', 'uninstall.lua', 'src/format.lua', 'src/lsc.lua',
+      'src/options.lua', 'src/glasses.lua', 'src/screen.lua', 'src/generators.lua', 'src/link.lua',
+      'src/discord.lua'},
     config = 'config.lua',
   },
   {
     program = 'viewer',
     name = 'the viewer',
     description = 'Viewer: this computer shows a Power Display computer through a linked card',
-    files = {'viewer.lua', 'setup.lua', 'uninstall.lua', 'src/format.lua', 'src/options.lua',
-      'src/glasses.lua', 'src/screen.lua', 'src/link.lua'},
+    files = {'viewer.lua', 'setup.lua', 'update.lua', 'uninstall.lua', 'src/format.lua', 'src/options.lua',
+      'src/glasses.lua', 'src/screen.lua', 'src/link.lua', 'src/discord.lua'},
     config = 'config.viewer.lua',
   },
   {
     program = 'hudonly',
     name = 'Power Display (HUD only)',
     description = 'HUD only: this computer is connected to the LSC and only draws the glasses HUD',
-    files = {'hudonly.lua', 'setup.lua', 'uninstall.lua', 'src/format.lua', 'src/lsc.lua', 'src/options.lua',
-      'src/glasses.lua'},
+    files = {'hudonly.lua', 'setup.lua', 'update.lua', 'uninstall.lua', 'src/format.lua', 'src/lsc.lua',
+      'src/options.lua', 'src/glasses.lua', 'src/discord.lua'},
     config = 'config.hudonly.lua',
   },
 }
@@ -70,26 +78,33 @@ print()
 
 -- GitHub caches each file on a branch for up to 5 minutes, so right after an update
 -- some downloads could be old and others new. Downloading from the latest commit's id
--- always gives one matching set. Returns nil if it can't be looked up.
+-- always gives one matching set. Returns its id and date, or nil if they can't be
+-- looked up.
 local function latestCommit()
   if args[2] then
     return nil -- a custom repo: use the branch as given
   end
-  local ok, sha = pcall(function()
+  local ok, sha, date = pcall(function()
     local internet = require('internet')
     local body = ''
     for chunk in internet.request(api .. branch, nil, {['User-Agent'] = 'GTNH-PowerDisplay installer'}) do
       body = body .. chunk
       if #body > 2048 then
-        break -- the commit id is at the start of the response
+        break -- the commit id and date are at the start of the response
       end
     end
-    return body:match('"sha"%s*:%s*"(%x+)"')
+    return body:match('"sha"%s*:%s*"(%x+)"'), body:match('"date"%s*:%s*"([^"]+)"')
   end)
-  return ok and sha or nil
+  if ok and sha then
+    return sha, date
+  end
+  return nil
 end
 
-local ref = latestCommit()
+local ref, refDate = commit, commitDate
+if not ref then
+  ref, refDate = latestCommit()
+end
 if ref then
   print('Installing ' .. role.name .. ', version ' .. ref:sub(1, 7))
 else
@@ -145,6 +160,17 @@ for _, entry in ipairs(wanted) do
   end
 end
 print('Installed.')
+
+-- The installed version, for update to compare with the newest one
+if ref ~= branch then
+  local file = io.open(path('.version'), 'w')
+  if file then
+    file:write(ref .. '\n' .. (refDate or '') .. '\n')
+    file:close()
+  end
+else
+  filesystem.remove(path('.version')) -- unknown, so update offers the newest one
+end
 
 local function readFile(file)
   local handle = io.open(file, 'r')
@@ -452,3 +478,4 @@ end
 print()
 print('Edit settings with: edit config.lua')
 print('Start with: ' .. role.program .. '    (stop with C)')
+print('Update later with: update')

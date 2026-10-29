@@ -7,7 +7,8 @@ local term = require('term')
 
 -- OpenOS keeps loaded modules until reboot; forget ours so an update takes effect
 -- and nothing is left over from a previous run
-for _, name in ipairs({'src.format', 'src.options', 'src.lsc', 'src.glasses', 'src.screen', 'src.generators', 'src.link'}) do
+for _, name in ipairs({'src.format', 'src.options', 'src.lsc', 'src.glasses', 'src.screen', 'src.generators', 'src.link',
+    'src.discord'}) do
   package.loaded[name] = nil
 end
 
@@ -17,6 +18,7 @@ local hud = require('src.glasses')
 local screen = require('src.screen')
 local generators = require('src.generators')
 local link = require('src.link')
+local discord = require('src.discord')
 
 local RETRY_SECONDS = 5
 local FRAME_SECONDS = 0.1 -- animation frames between updates (arrows, low power fade)
@@ -105,6 +107,7 @@ local function waitForLSC()
     end
     message('Waiting for the LSC...', {hint})
     link.sendStatus('The Power Display computer is waiting for the LSC.', hint)
+    discord.missing(hint)
     local action = wait(RETRY_SECONDS)
     if action then
       return nil, action
@@ -133,7 +136,8 @@ local function run(machine)
     average.add(now, data.stored)
     timeAverage.add(now, data.stored)
 
-    local view = {notes = notes, generatorProblem = generatorProblem, generatorHint = generatorHint}
+    local view = {notes = notes, generatorProblem = generatorProblem, generatorHint = generatorHint,
+      discordProblems = discord.problems()}
     view.eut = average.value()
     view.direction = 0
     if view.eut and view.eut >= 1 then
@@ -155,6 +159,7 @@ local function run(machine)
     generators.update(data.percent)
     view.generators = generators.isRunning()
     link.send(data, view, config)
+    discord.update(data, view)
 
     if config.showHud then
       hud.update(data, view)
@@ -167,6 +172,14 @@ local function run(machine)
     if action then
       return action
     end
+  end
+end
+
+-- A problem with sending to Discord: printed if there is no screen (the screen
+-- shows it in its footer)
+local function discordWarning(text)
+  if not screen.active() then
+    print(text)
   end
 end
 
@@ -190,6 +203,7 @@ local function main()
     print(table.concat(notes, '. ') .. '.')
   end
   generatorProblem, generatorHint = generators.start(config)
+  discord.configure(config, discordWarning)
   if generatorProblem and not screen.active() then
     print('Generator control is off: ' .. generatorProblem)
     print(generatorHint)
@@ -230,6 +244,7 @@ local function main()
     hud.notice('Power Display error, retrying...')
     message('Something went wrong, retrying in ' .. RETRY_SECONDS .. 's', {tostring(err)}, 0xFF5555)
     link.sendStatus('The Power Display computer had an error and is retrying.', tostring(err))
+    discord.missing('Error: ' .. tostring(err))
     local action = wait(RETRY_SECONDS)
     if action then
       return action
@@ -255,6 +270,8 @@ local function editConfig()
 end
 
 local function program()
+  discord.started({started = 'Power Display started', lost = "The LSC can't be read",
+    back = 'The LSC can be read again'})
   while main() == 'edit' do
     editConfig()
   end
@@ -270,6 +287,7 @@ end)
 hud.stop()
 screen.stop()
 generators.stop()
+discord.stop()
 
 if not ok and err ~= 'interrupted' then
   io.stderr:write(tostring(err) .. '\n')

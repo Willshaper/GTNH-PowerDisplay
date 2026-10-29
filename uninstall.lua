@@ -9,8 +9,10 @@ local files = {
   'viewer.lua',
   'hudonly.lua',
   'setup.lua',
+  'update.lua',
   'uninstall.lua',
   'config.default.lua',
+  '.version',
   'src/format.lua',
   'src/lsc.lua',
   'src/options.lua',
@@ -18,6 +20,7 @@ local files = {
   'src/screen.lua',
   'src/generators.lua',
   'src/link.lua',
+  'src/discord.lua',
 }
 
 local function ask(question)

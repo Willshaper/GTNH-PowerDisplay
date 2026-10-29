@@ -39,6 +39,19 @@ local DEFAULTS = {
 
   linkedCard = false,
 
+  -- Discord
+  discordWebhook = '',
+  discordName = '',
+  discordMention = '',
+  discordLowPower = true,
+  discordEmptySoon = true,
+  discordMaintenance = true,
+  discordLscLost = true,
+  discordGenerators = false,
+  discordStarted = true,
+  discordEmptySoonMinutes = 30,
+  discordReminder = 0,
+
   -- Colours
   barColor = 'electricBlue',
   barEmptyColor = 'darkSlateBlue',
@@ -232,6 +245,22 @@ local function check(config)
   end
   oneOf(config, 'generatorSignal', {'stop', 'run'})
   boolean(config, 'linkedCard')
+
+  local webhook = config.discordWebhook
+  if type(webhook) ~= 'string' or not (webhook == '' or webhook:find('^https://')) then
+    problem('discordWebhook', 'discordWebhook must be "" (off), or the webhook URL in quotes, starting with https://')
+  end
+  for _, key in ipairs({'discordName', 'discordMention'}) do
+    if type(config[key]) ~= 'string' then
+      problem(key, string.format('%s must be text in quotes, or "" (it is %s)', key, tostring(config[key])))
+    end
+  end
+  for _, key in ipairs({'discordLowPower', 'discordEmptySoon', 'discordMaintenance', 'discordLscLost',
+      'discordGenerators', 'discordStarted'}) do
+    boolean(config, key)
+  end
+  number(config, 'discordEmptySoonMinutes', 1)
+  number(config, 'discordReminder', 0)
 
   for _, key in ipairs({'barColor', 'barEmptyColor', 'textOverFillColor', 'textOverEmptyColor', 'alertColor',
       'frameColor', 'timeLeftColor'}) do

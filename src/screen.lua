@@ -387,7 +387,8 @@ end
 
 -- data: from lsc.read
 -- view: {eut, direction (1, -1 or 0), timeTo, timeToWhat, timeRate, lowPower, generators (true/false/nil),
---        generatorProblem, generatorHint, notes (footer), remote (shown by the viewer)}
+--        generatorProblem, generatorHint, notes (footer), discordProblems (footer, in red),
+--        remote (shown by the viewer)}
 function screen.update(data, view)
   if not gpu then
     return
@@ -512,7 +513,7 @@ function screen.update(data, view)
     drawGraph(y + 1, footer - 1)
   end
 
-  -- Footer: alerts, or how to stop
+  -- Footer: alerts, problems with Discord, or how to stop
   local alerts = {}
   if view.lowPower then
     table.insert(alerts, {string.format(' LOW POWER (below %s%%) ', config.lowPower), COLOR.bad})
@@ -520,8 +521,11 @@ function screen.update(data, view)
   if config.screen.Maintenance and not data.maintenanceOk then
     table.insert(alerts, {' MAINTENANCE NEEDED ', COLOR.bad})
   end
+  local discordProblems = view.discordProblems or {}
   if #alerts > 0 then
     row(footer, alerts)
+  elseif #discordProblems > 0 then
+    row(footer, {{' C stops, S edits.  ', COLOR.faint}, {table.concat(discordProblems, '. ') .. '.', COLOR.bad}})
   else
     local text = ' C stops, S edits settings.  Updates every ' .. config.updateEvery .. 's.'
     for _, note in ipairs(view.notes or {}) do
